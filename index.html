@@ -4,84 +4,67 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AlPytide IDE</title>
+  
+  <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- CodeMirror CSS (Tô màu cú pháp Python) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+
   <style>
     body {
-      background-color: #121212;
-      color: #e0e0e0;
-      font-family: monospace;
-      user-select: none;
-      touch-action: manipulation;
+      background-color: #181a1f;
+      color: #abb2bf;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 8px;
     }
     .brand-title {
-      font-size: 0.75rem;
-      color: #888;
-      margin-bottom: 2px;
+      font-size: 0.7rem;
+      color: #5c6370;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
+      font-weight: bold;
     }
-    .editor-container {
-      display: flex;
-      height: calc(100vh - 110px);
-      border: 1px solid #333;
-      border-radius: 4px;
-      background: #1e1e1e;
-      overflow: hidden;
-    }
-    .line-numbers {
-      width: 40px;
-      background-color: #252526;
-      color: #858585;
-      text-align: right;
-      padding: 10px 8px;
-      font-family: monospace;
+    /* Chỉnh giao diện CodeMirror chuẩn đẹp */
+    .CodeMirror {
+      height: calc(100vh - 110px) !important;
+      font-family: "Fira Code", monospace, "Courier New";
       font-size: 14px;
-      line-height: 1.5;
-      overflow: hidden;
-      white-space: pre;
-    }
-    textarea.code-editor {
-      flex: 1;
-      background: transparent;
-      color: #d4d4d4;
-      border: none;
-      outline: none;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 14px;
-      line-height: 1.5;
-      resize: none;
-      white-space: pre-wrap;
-      word-wrap: break-word;
+      border-radius: 6px;
+      border: 1px solid #282c34;
     }
     .console-output {
       height: calc(100vh - 110px);
-      background-color: #000;
-      color: #00ff66;
-      padding: 15px;
-      font-family: monospace;
+      background-color: #0d1117;
+      color: #3fb950;
+      padding: 12px;
+      font-family: "Fira Code", monospace;
       font-size: 14px;
       white-space: pre-wrap;
       overflow-y: auto;
-      border: 1px solid #333;
-      border-radius: 4px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
     }
     .nav-tabs .nav-link {
-      color: #aaa;
+      color: #8b949e;
       border: none;
       padding: 6px 12px;
+      font-weight: 500;
     }
     .nav-tabs .nav-link.active {
-      background-color: #1e1e1e;
-      color: #fff;
-      border-bottom: 2px solid #0d6efd;
+      background-color: #21262d;
+      color: #58a6ff;
+      border-bottom: 2px solid #58a6ff;
     }
   </style>
 </head>
-<body class="p-2">
+<body>
 
-  <div class="brand-title text-center">AlPytide Studio</div>
+  <div class="brand-title text-center mb-1">ALPYTIDE STUDIO</div>
 
+  <!-- Topbar -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <ul class="nav nav-tabs border-0" id="ideTabs" role="tablist">
       <li class="nav-item">
@@ -93,12 +76,10 @@
     </ul>
 
     <div class="d-flex align-items-center gap-1">
-      <button class="btn btn-success btn-sm px-3 fw-bold" onclick="runPythonCode()">▶ Run</button>
+      <button class="btn btn-primary btn-sm px-3 fw-bold" id="runBtn" onclick="runPythonCode()">▶ Run</button>
 
       <div class="dropdown">
-        <button class="btn btn-secondary btn-sm" type="button" data-bs-toggle="dropdown">
-          ☰
-        </button>
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown">☰</button>
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
           <li><a class="dropdown-item" href="#" onclick="copyCode()">Sao chép Edit Code</a></li>
           <li><a class="dropdown-item" href="#" onclick="copyLog()">Sao chép Console Log</a></li>
@@ -107,12 +88,10 @@
     </div>
   </div>
 
+  <!-- Tab Contents -->
   <div class="tab-content" id="ideTabContent">
     <div class="tab-pane fade show active" id="edit-pane" role="tabpanel">
-      <div class="editor-container">
-        <div class="line-numbers" id="lineNumbers">1</div>
-        <textarea class="code-editor" id="codeEditor" spellcheck="false" placeholder="# Nhập mã Python ở đây..."></textarea>
-      </div>
+      <textarea id="codeEditor"></textarea>
     </div>
 
     <div class="tab-pane fade" id="output-pane" role="tabpanel">
@@ -120,44 +99,45 @@
     </div>
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
+  <!-- CodeMirror JS Core & Python Mode -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+
   <script>
-    // Tự động nhận diện host (tránh lỗi lệch domain/protocol)
     const SERVER_URL = window.location.origin + '/api/run';
 
-    const codeEditor = document.getElementById('codeEditor');
-    const lineNumbers = document.getElementById('lineNumbers');
-    const consoleOutput = document.getElementById('consoleOutput');
+    // Khởi tạo CodeMirror
+    const initialCode = localStorage.getItem('alpytide_code') || `import time\n\nprint("Xin chào từ AlPytide IDE!")\ntime.sleep(1)\nprint("Kết nối Server thành công!")`;
 
-    const savedCode = localStorage.getItem('alpytide_code');
-    if (savedCode) {
-      codeEditor.value = savedCode;
-    } else {
-      codeEditor.value = `import requests\n\nprint("Xin chào từ AlPytide IDE!")`;
-    }
-
-    function updateLineNumbers() {
-      const lines = codeEditor.value.split('\n').length;
-      let lineNumHTML = '';
-      for (let i = 1; i <= lines; i++) {
-        lineNumHTML += i + '\n';
-      }
-      lineNumbers.textContent = lineNumHTML;
-    }
-
-    codeEditor.addEventListener('input', () => {
-      updateLineNumbers();
-      localStorage.setItem('alpytide_code', codeEditor.value);
+    const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+      mode: 'python',
+      theme: 'dracula',
+      lineNumbers: true,
+      lineWrapping: true,
+      indentUnit: 4,
+      viewportMargin: Infinity
     });
 
-    codeEditor.addEventListener('scroll', () => {
-      lineNumbers.scrollTop = codeEditor.scrollTop;
+    editor.setValue(initialCode);
+
+    // Lưu mã code khi gõ
+    editor.on('change', () => {
+      localStorage.setItem('alpytide_code', editor.getValue());
     });
 
+    // Chạy Code Python
     async function runPythonCode() {
-      const code = codeEditor.value;
-      consoleOutput.textContent = "> Đang kết nối server và thực thi code...";
+      const code = editor.getValue();
+      const consoleOutput = document.getElementById('consoleOutput');
+      const runBtn = document.getElementById('runBtn');
 
+      runBtn.disabled = true;
+      runBtn.innerText = '⏳ Running...';
+      consoleOutput.textContent = "> Đang kết nối server và thực thi code...\n";
+
+      // Chuyển sang Tab Output
       const outputTabTrigger = new bootstrap.Tab(document.getElementById('output-tab'));
       outputTabTrigger.show();
 
@@ -172,20 +152,22 @@
         consoleOutput.textContent = data.output;
       } catch (err) {
         consoleOutput.textContent = "> Lỗi kết nối Server: " + err.message;
+      } finally {
+        runBtn.disabled = false;
+        runBtn.innerText = '▶ Run';
       }
     }
 
     function copyCode() {
-      navigator.clipboard.writeText(codeEditor.value);
+      navigator.clipboard.writeText(editor.getValue());
       alert("Đã sao chép mã Python!");
     }
 
     function copyLog() {
+      const consoleOutput = document.getElementById('consoleOutput');
       navigator.clipboard.writeText(consoleOutput.textContent);
       alert("Đã sao chép Console Log!");
     }
-
-    updateLineNumbers();
   </script>
 </body>
 </html>
