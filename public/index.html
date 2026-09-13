@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlPytide API - Modern Python Execution Engine</title>
+  <title>AlPytide Studio - Advanced Python IDE</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
   
@@ -19,7 +20,7 @@
       --border-color: #30363d;
       --accent-blue: #58a6ff;
       --accent-green: #3fb950;
-      --accent-purple: #8957e5;
+      --accent-red: #f85149;
     }
 
     body { 
@@ -33,63 +34,56 @@
       border-bottom: 1px solid var(--border-color); 
     }
 
-    .nav-tabs .nav-link { 
-      color: #8b949e; 
-      font-weight: 500; 
-      border: none;
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-    }
-
-    .nav-tabs .nav-link.active { 
-      color: var(--accent-blue) !important; 
-      background-color: transparent;
-      border-bottom: 2px solid var(--accent-blue); 
-    }
-
-    .card { 
+    .ide-card { 
       background-color: var(--card-bg); 
       border: 1px solid var(--border-color); 
       border-radius: 8px; 
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-    pre { 
-      background-color: var(--bg-dark); 
-      padding: 12px; 
-      border-radius: 6px; 
-      border: 1px solid var(--border-color); 
-      color: #7ee787; 
-      font-family: "Fira Code", monospace; 
-      font-size: 13px; 
-      white-space: pre-wrap;
-      word-break: break-all;
-      margin-bottom: 0;
+    .toolbar-btn {
+      background-color: #21262d;
+      border: 1px solid var(--border-color);
+      color: #c9d1d9;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
     }
 
-    .method-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
+    .toolbar-btn:hover {
+      background-color: #30363d;
+      color: #fff;
     }
 
-    .badge-get { background-color: #238636; color: white; }
-    .badge-ws { background-color: var(--accent-purple); color: white; }
+    .file-item {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #8b949e;
+    }
+
+    .file-item.active {
+      background-color: #21262d;
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
 
     .CodeMirror { 
-      height: 360px !important; 
-      border-radius: 6px; 
+      height: 480px !important; 
+      border-radius: 0 0 6px 6px; 
       border: 1px solid var(--border-color); 
-      font-size: 13px; 
+      font-size: 14px; 
     }
 
     #console { 
       background-color: var(--bg-dark); 
       border: 1px solid var(--border-color); 
       border-radius: 6px; 
-      height: 360px; 
+      height: 280px; 
       padding: 12px; 
       font-family: "Fira Code", monospace; 
       font-size: 13px; 
@@ -98,46 +92,44 @@
       word-break: break-all;
     }
 
-    .recommend-icon-box {
-      background: rgba(88, 166, 255, 0.05);
-      border: 1px solid rgba(88, 166, 255, 0.15);
-      border-radius: 6px;
-      padding: 10px;
-      text-align: center;
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
     }
 
-    .recommend-icon-box i {
-      font-size: 1.25rem;
-      color: var(--accent-blue);
-      margin-bottom: 6px;
+    .rate-badge {
+      background: #21262d;
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
 
   <!-- NAVBAR -->
-  <nav class="navbar navbar-expand-lg sticky-top">
-    <div class="container">
+  <nav class="navbar navbar-expand-lg py-2">
+    <div class="container-fluid px-4">
       <a class="navbar-brand text-white fw-bold d-flex align-items-center" href="#">
-        <i class="fa-solid fa-terminal text-primary me-2"></i>AlPytide API Engine
+        <i class="fa-solid fa-code text-primary me-2"></i>AlPytide Studio v1.1
       </a>
 
       <div class="d-flex align-items-center gap-3">
-        <ul class="nav nav-tabs border-0" id="docTabs">
-          <li class="nav-item">
-            <a class="nav-link active" onclick="switchTab('docs', event)">
-              <i class="fa-solid fa-book me-1"></i><span data-i18n="tabDocs">Tài liệu API</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" onclick="switchTab('sandbox', event)">
-              <i class="fa-solid fa-flask me-1"></i><span data-i18n="tabSandbox">Sandbox (Thử nghiệm)</span>
-            </a>
-          </li>
-        </ul>
+        <!-- ĐẾM LƯỢT HẠN NGẠCH -->
+        <div class="rate-badge text-white" id="rateLimitDisplay">
+          <i class="fa-solid fa-bolt text-warning me-1"></i>
+          <span id="runsLeftText">30/30 lượt</span>
+        </div>
 
-        <!-- LỰA CHỌN NGÔN NGỮ -->
-        <div class="dropdown ms-2">
+        <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#docsModal">
+          <i class="fa-solid fa-book me-1"></i><span data-i18n="docsBtn">Tài liệu API</span>
+        </button>
+
+        <!-- CHUYỂN NGÔN NGỮ -->
+        <div class="dropdown">
           <button class="btn btn-outline-secondary btn-sm dropdown-toggle text-white" type="button" data-bs-toggle="dropdown">
             <i class="fa-solid fa-globe me-1"></i><span id="currentLang">Tiếng Việt</span>
           </button>
@@ -150,180 +142,124 @@
     </div>
   </nav>
 
-  <div class="container my-4">
-    <!-- TAB TÀI LIỆU -->
-    <div id="tab-docs">
-      <!-- GIỚI THIỆU -->
-      <div class="card p-4 mb-4">
-        <h4 class="text-white fw-bold mb-2" data-i18n="introTitle">Giới thiệu Hệ thống Engine AlPytide API</h4>
-        <p class="text-secondary mb-3" data-i18n="introDesc">
-          AlPytide API là nền tảng điện toán đám mây cung cấp dịch vụ thực thi Python Realtime kết nối bằng WebSockets. Dịch vụ hỗ trợ nhúng dễ dàng vào mọi loại ứng dụng Web (Single Page Application, GitHub Pages, Vercel...).
-        </p>
-        <div>
-          <span class="text-secondary" data-i18n="endpointLabel">Endpoint chính thức:</span> 
-          <code class="text-info bg-dark px-2 py-1 rounded ms-1 border border-secondary">https://alpytide.onrender.com</code>
+  <!-- MAIN STUDIO WORKSPACE -->
+  <div class="container-fluid px-4 my-3">
+    <div class="row g-3">
+      
+      <!-- CỘT 1: QUẢN LÝ DỰ ÁN & FILE (LOCAL STORAGE) -->
+      <div class="col-lg-2">
+        <div class="ide-card p-2 h-100">
+          <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+            <span class="fw-bold small text-white" data-i18n="filesHeader">Tập tin</span>
+            <button class="btn btn-sm btn-outline-primary py-0 px-2" onclick="createNewFile()">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+          <div id="fileList" class="d-flex flex-column gap-1"></div>
         </div>
       </div>
 
-      <!-- DANH SÁCH ENDPOINT & SOCKET -->
-      <div class="row g-4 mb-4">
-        <div class="col-lg-6">
-          <div class="card p-4 h-100">
-            <div class="d-flex align-items-center mb-3">
-              <span class="method-badge badge-get me-2">GET</span>
-              <h5 class="text-white mb-0">/api/status</h5>
-            </div>
-            <p class="text-secondary small" data-i18n="statusDesc">Trích xuất thông số trạng thái hoạt động của hệ thống Engine.</p>
-            <h6 class="text-white fs-6" data-i18n="responseLabel">Cấu trúc dữ liệu trả về:</h6>
-            <pre>{
-  "status": "online",
-  "engine": "AlPytide Python Engine (Docker)",
-  "version": "1.0.0",
-  "timeout_limit": "15 seconds"
-}</pre>
+      <!-- CỘT 2: CODE EDITOR & TOOLBAR -->
+      <div class="col-lg-6">
+        <div class="ide-card p-2">
+          <div class="d-flex flex-wrap gap-2 mb-2 p-1 border-bottom border-secondary">
+            <button class="btn btn-primary btn-sm fw-bold px-3" id="runBtn" onclick="runCode()">
+              <i class="fa-solid fa-play me-1"></i><span data-i18n="btnRun">Chạy (Run)</span>
+            </button>
+            <button class="toolbar-btn" onclick="copyCode()"><i class="fa-regular fa-copy me-1"></i><span data-i18n="btnCopy">Sao chép</span></button>
+            <button class="toolbar-btn" onclick="pasteCode()"><i class="fa-solid fa-paste me-1"></i><span data-i18n="btnPaste">Dán</span></button>
+            <button class="toolbar-btn" onclick="selectAllCode()"><i class="fa-solid fa-object-ungroup me-1"></i><span data-i18n="btnSelectAll">Chọn tất cả</span></button>
+            <button class="toolbar-btn" onclick="cutCode()"><i class="fa-solid fa-scissors me-1"></i><span data-i18n="btnCut">Cắt</span></button>
+            <button class="toolbar-btn text-danger ms-auto" onclick="clearCode()"><i class="fa-solid fa-trash-can me-1"></i><span data-i18n="btnClearCode">Xóa code</span></button>
           </div>
-        </div>
 
-        <div class="col-lg-6">
-          <div class="card p-4 h-100">
-            <div class="d-flex align-items-center mb-3">
-              <span class="method-badge badge-ws me-2">WebSocket</span>
-              <h5 class="text-white mb-0">Socket.io Events</h5>
-            </div>
-            <p class="text-secondary small" data-i18n="wsDesc">Các sự kiện Realtime được hỗ trợ qua giao thức Socket.io Client:</p>
-            <ul class="text-secondary small mb-0 ps-3">
-              <li class="mb-1"><code class="text-info">run_code</code> (Emit): Gửi chuỗi nguồn mã Python sang máy chủ.</li>
-              <li class="mb-1"><code class="text-info">input_data</code> (Emit): Truyền dữ liệu nhập luồng tiêu chuẩn (stdin).</li>
-              <li class="mb-1"><code class="text-info">output</code> (On): Lắng nghe kết quả thực thi (stdout / stderr).</li>
-              <li><code class="text-info">process_exit</code> (On): Nhận thông báo khi tiến trình chạy hoàn tất.</li>
-            </ul>
-          </div>
+          <textarea id="codeEditor"></textarea>
         </div>
       </div>
 
-      <!-- KHUYẾN NGHỊ THIẾT KẾ GIAO DIỆN (RECOMMENDED UI) -->
-      <div class="card p-4 mb-4">
-        <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
-          <i class="fa-solid fa-wand-magic-sparkles text-warning me-2"></i>
-          <span data-i18n="uiRecTitle">Khuyến nghị Thiết kế Giao diện Người dùng (Recommended Action Controls)</span>
-        </h5>
-        <p class="text-secondary small mb-3" data-i18n="uiRecDesc">Để tối ưu hóa trải nghiệm tương tác với AlPytide API, hệ thống khuyến nghị tích hợp bộ công cụ nút thao tác dạng Biểu tượng (Icon) đồng bộ trên Client UI:</p>
+      <!-- CỘT 3: CONSOLE OUTPUT, KẾT QUẢ FILE & BIỂU ĐỒ -->
+      <div class="col-lg-4">
+        <div class="ide-card p-3">
+          
+          <ul class="nav nav-tabs border-secondary mb-2" id="outputTabs">
+            <li class="nav-item">
+              <a class="nav-link active py-1 text-white small" data-bs-toggle="tab" href="#tabConsole">Console Output</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link py-1 text-white small" data-bs-toggle="tab" href="#tabFiles">File Tạo Ra (.txt/.json)</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link py-1 text-white small" data-bs-toggle="tab" href="#tabCharts">Biểu đồ</a>
+            </li>
+          </ul>
 
-        <div class="row g-2 text-white">
-          <div class="col-6 col-md-3">
-            <div class="recommend-icon-box">
-              <i class="fa-solid fa-play text-primary"></i>
-              <div class="fw-bold small" data-i18n="btnRun">Nút Chạy (Run)</div>
-              <div class="text-secondary text-xs" style="font-size: 11px;">Thực thi mã nguồn</div>
+          <div class="tab-content">
+            <!-- TAB CONSOLE -->
+            <div class="tab-pane fade show active" id="tabConsole">
+              <div class="d-flex justify-content-end gap-2 mb-2">
+                <button class="toolbar-btn" onclick="copyConsoleLog()"><i class="fa-regular fa-copy me-1"></i><span data-i18n="btnCopyLog">Sao chép log</span></button>
+                <button class="toolbar-btn text-danger" onclick="clearConsole()"><i class="fa-solid fa-broom me-1"></i><span data-i18n="btnClearOutput">Xóa output</span></button>
+              </div>
+              <div id="console"></div>
+              <div class="input-group mt-2">
+                <input type="text" id="consoleInput" class="form-control bg-dark text-white border-secondary" placeholder="Nhập dữ liệu (stdin)..." disabled>
+                <button class="btn btn-success fw-bold" id="sendInputBtn" onclick="sendInput()" disabled data-i18n="btnSend">Gửi</button>
+              </div>
+            </div>
+
+            <!-- TAB FILE TẠO RA -->
+            <div class="tab-pane fade" id="tabFiles">
+              <div id="generatedFilesContainer" class="p-2">
+                <p class="text-secondary small">Chưa có file .txt hoặc .json nào được tạo từ chương trình Python.</p>
+              </div>
+            </div>
+
+            <!-- TAB BIỂU ĐỒ MATPLOTLIB -->
+            <div class="tab-pane fade" id="tabCharts">
+              <div id="generatedChartsContainer" class="text-center p-2">
+                <p class="text-secondary small">Chưa có biểu đồ nào được vẽ bằng Matplotlib.</p>
+              </div>
             </div>
           </div>
-          <div class="col-6 col-md-3">
-            <div class="recommend-icon-box">
-              <i class="fa-regular fa-copy"></i>
-              <div class="fw-bold small" data-i18n="btnCopy">Nút Sao chép</div>
-              <div class="text-secondary text-xs" style="font-size: 11px;">Sao chép mã đã chọn/tất cả</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="recommend-icon-box">
-              <i class="fa-solid fa-terminal"></i>
-              <div class="fw-bold small" data-i18n="btnCopyLog">Nút Sao chép Log</div>
-              <div class="text-secondary text-xs" style="font-size: 11px;">Trích xuất lịch sử Output</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="recommend-icon-box">
-              <i class="fa-solid fa-paste"></i>
-              <div class="fw-bold small" data-i18n="btnPaste">Nút Dán (Paste)</div>
-              <div class="text-secondary text-xs" style="font-size: 11px;">Dán mã từ Clipboard</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="recommend-icon-box">
-              <i class="fa-solid fa-object-ungroup"></i>
-              <div class="fw-bold small" data-i18n="btnSelectAll">Nút Bôi Tất Cả</div>
-              <div class="text-secondary text-xs" style="font-size: 11px;">Khoanh vùng toàn bộ mã</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="recommend-icon-box">
-              <i class="fa-solid fa-scissors"></i>
-              <div class="fw-bold small" data-i18n="btnCut">Nút Cắt (Cut)</div>
-              <div class="text-secondary text-xs" style="font-size: 11px;">Cắt vùng mã được chọn</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="recommend-icon-box">
-              <i class="fa-solid fa-trash-can text-danger"></i>
-              <div class="fw-bold small" data-i18n="btnClearCode">Nút Xóa Code</div>
-              <div class="text-secondary text-xs" style="font-size: 11px;">Xóa sạch nội dung Editor</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="recommend-icon-box">
-              <i class="fa-solid fa-broom"></i>
-              <div class="fw-bold small" data-i18n="btnClearOutput">Nút Xóa Output</div>
-              <div class="text-secondary text-xs" style="font-size: 11px;">Làm sạch bảng console</div>
-            </div>
-          </div>
+
         </div>
       </div>
 
-      <!-- HƯỚNG DẪN TÍCH HỢP CODE -->
-      <div class="card p-4">
-        <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
-          <i class="fa-solid fa-code text-warning me-2"></i>
-          <span data-i18n="integrationTitle">Tích hợp vào Ứng dụng Client (JavaScript)</span>
-        </h5>
-        <pre>
-&lt;script src="https://cdn.socket.io/4.7.2/socket.io.min.js"&gt;&lt;/script&gt;
-&lt;script&gt;
-  // Khởi tạo kết nối đến Server Engine AlPytide
-  const socket = io('https://alpytide.onrender.com');
-
-  // 1. Thực thi đoạn mã Python
-  socket.emit('run_code', 'print("Engine AlPytide ready.")');
-
-  // 2. Nhận luồng dữ liệu trả về
-  socket.on('output', (res) => {
-    if (res.type === 'stdout') {
-      console.log('Output:', res.data);
-    } else {
-      console.error('Lỗi:', res.data);
-    }
-  });
-
-  // 3. Theo dõi sự kiện hoàn tất tiến trình
-  socket.on('process_exit', (data) => {
-    console.log('Tiến trình hoàn tất với Mã Exit:', data.code);
-  });
-&lt;/script&gt;</pre>
-      </div>
     </div>
+  </div>
 
-    <!-- TAB SANDBOX THỬ NGHIỆM -->
-    <div id="tab-sandbox" style="display: none;">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="card p-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="fw-bold text-white fs-6"><i class="fa-regular fa-file-code me-2 text-primary"></i>main.py</span>
-              <button class="btn btn-sm btn-primary fw-bold px-3" id="runBtn" onclick="runSandboxCode()">
-                <i class="fa-solid fa-play me-1"></i><span data-i18n="btnRunText">Chạy Code</span>
-              </button>
-            </div>
-            <textarea id="sandboxEditor"></textarea>
-          </div>
+  <!-- MODAL TÀI LIỆU VÀ KẾT NỐI DATABASE -->
+  <div class="modal fade" id="docsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title"><i class="fa-solid fa-book text-info me-2"></i>Tài liệu API & Ví dụ Mẫu</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="col-md-6">
-          <div class="card p-3">
-            <span class="fw-bold text-white mb-2 fs-6"><i class="fa-solid fa-terminal me-2 text-success"></i>Console Output</span>
-            <div id="console"></div>
-            <div class="input-group mt-2">
-              <input type="text" id="consoleInput" class="form-control bg-dark text-white border-secondary" placeholder="Nhập giá trị dữ liệu đầu vào (stdin)...">
-              <button class="btn btn-success fw-bold" onclick="sendSandboxInput()" data-i18n="btnSendText">Gửi</button>
-            </div>
-          </div>
+        <div class="modal-body">
+          <h6>1. Ví dụ vẽ biểu đồ (Matplotlib):</h6>
+          <pre class="bg-black p-2 rounded text-success">import matplotlib.pyplot as plt
+
+plt.plot([1, 2, 3, 4], [10, 20, 25, 30])
+plt.title("Biểu đồ doanh thu")
+plt.savefig("chart.png") # Tự động gửi lên Tab Biểu đồ</pre>
+
+          <h6 class="mt-3">2. Ví dụ Tạo & Ghi File TXT / JSON:</h6>
+          <pre class="bg-black p-2 rounded text-success">import json
+
+data = {"status": "ok", "items": [1, 2, 3]}
+with open("output.json", "w") as f:
+    json.dump(data, f) # Xuất hiện ở Tab File Tạo Ra</pre>
+
+          <h6 class="mt-3">3. Ví dụ Cơ Sở Dữ Liệu Python (SQLite3):</h6>
+          <pre class="bg-black p-2 rounded text-success">import sqlite3
+
+conn = sqlite3.connect('database.db')
+cursor = conn.cursor()
+cursor.execute('CREATE TABLE IF NOT EXISTS users (id INT, name TEXT)')
+cursor.execute('INSERT INTO users VALUES (1, "AlPytide User")')
+conn.commit()
+print("Đã lưu dữ liệu thành công!")</pre>
         </div>
       </div>
     </div>
@@ -334,61 +270,52 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
 
   <script>
-    const SERVER_URL = 'https://alpytide.onrender.com';
-    const socket = io(SERVER_URL);
+    const socket = io();
     let editor;
+    let currentLang = 'vi';
 
-    // TỪ ĐỂN ĐA NGÔN NGỮ (I18N)
+    // Cấu trúc dự án lưu ở LocalStorage
+    let projectFiles = JSON.parse(localStorage.getItem('alpytide_files')) || [
+      {
+        name: 'main.py',
+        content: '# AlPytide Studio Python Engine\nimport json\nimport matplotlib.pyplot as plt\n\nprint("Đang khởi tạo ứng dụng...")\n\n# 1. Ghi file JSON\nwith open("data.json", "w") as f:\n    json.dump({"engine": "AlPytide", "status": "active"}, f)\n\n# 2. Vẽ biểu đồ\nplt.figure(figsize=(5,3))\nplt.plot([1, 2, 3, 4], [2, 5, 9, 15], marker="o")
+plt.title("Tăng trưởng")\nplt.savefig("graph.png")\n\nprint("Đã tạo file data.json và đồ thị graph.png thành công!")'
+      }
+    ];
+
+    let activeFileName = 'main.py';
+
     const translations = {
       vi: {
-        tabDocs: "Tài liệu API",
-        tabSandbox: "Sandbox (Thử nghiệm)",
-        introTitle: "Giới thiệu Hệ thống Engine AlPytide API",
-        introDesc: "AlPytide API là nền tảng điện toán đám mây cung cấp dịch vụ thực thi Python Realtime kết nối bằng WebSockets. Dịch vụ hỗ trợ nhúng dễ dàng vào mọi loại ứng dụng Web (Single Page Application, GitHub Pages, Vercel...).",
-        endpointLabel: "Endpoint chính thức:",
-        statusDesc: "Trích xuất thông số trạng thái hoạt động của hệ thống Engine.",
-        responseLabel: "Cấu trúc dữ liệu trả về:",
-        wsDesc: "Các sự kiện Realtime được hỗ trợ qua giao thức Socket.io Client:",
-        uiRecTitle: "Khuyến nghị Thiết kế Giao diện Người dùng (Recommended Action Controls)",
-        uiRecDesc: "Để tối ưu hóa trải nghiệm tương tác với AlPytide API, hệ thống khuyến nghị tích hợp bộ công cụ nút thao tác dạng Biểu tượng (Icon) đồng bộ trên Client UI:",
-        btnRun: "Nút Chạy (Run)",
-        btnCopy: "Nút Sao chép",
-        btnCopyLog: "Nút Sao chép Log",
-        btnPaste: "Nút Dán (Paste)",
-        btnSelectAll: "Nút Bôi Tất Cả",
-        btnCut: "Nút Cắt (Cut)",
-        btnClearCode: "Nút Xóa Code",
-        btnClearOutput: "Nút Xóa Output",
-        integrationTitle: "Tích hợp vào Ứng dụng Client (JavaScript)",
-        btnRunText: "Chạy Code",
-        btnSendText: "Gửi"
+        docsBtn: "Tài liệu API",
+        filesHeader: "Tập tin",
+        btnRun: "Chạy (Run)",
+        btnCopy: "Sao chép",
+        btnPaste: "Dán",
+        btnSelectAll: "Chọn tất cả",
+        btnCut: "Cắt",
+        btnClearCode: "Xóa code",
+        btnCopyLog: "Sao chép log",
+        btnClearOutput: "Xóa output",
+        btnSend: "Gửi"
       },
       en: {
-        tabDocs: "API Documentation",
-        tabSandbox: "Sandbox Testing",
-        introTitle: "AlPytide API Engine Overview",
-        introDesc: "AlPytide API is a cloud-based real-time Python execution engine powered by WebSockets. It enables seamless integration into any web application (Single Page Applications, GitHub Pages, Vercel, etc.).",
-        endpointLabel: "Official Endpoint:",
-        statusDesc: "Retrieve real-time operational status and engine configuration.",
-        responseLabel: "Sample JSON Response:",
-        wsDesc: "Real-time events supported via Socket.io Client protocol:",
-        uiRecTitle: "Recommended UI Action Controls",
-        uiRecDesc: "To deliver an optimal user experience when interacting with AlPytide API, client applications are encouraged to implement the following standardized icon action buttons:",
-        btnRun: "Run Button",
-        btnCopy: "Copy Button",
-        btnCopyLog: "Copy Log Button",
-        btnPaste: "Paste Button",
-        btnSelectAll: "Select All Button",
-        btnCut: "Cut Button",
-        btnClearCode: "Clear Code Button",
-        btnClearOutput: "Clear Output Button",
-        integrationTitle: "Client Integration Guide (JavaScript)",
-        btnRunText: "Run Code",
-        btnSendText: "Send"
+        docsBtn: "API Docs",
+        filesHeader: "Files",
+        btnRun: "Run Code",
+        btnCopy: "Copy",
+        btnPaste: "Paste",
+        btnSelectAll: "Select All",
+        btnCut: "Cut",
+        btnClearCode: "Clear Code",
+        btnCopyLog: "Copy Log",
+        btnClearOutput: "Clear Output",
+        btnSend: "Send"
       }
     };
 
     function changeLanguage(lang) {
+      currentLang = lang;
       document.getElementById('currentLang').textContent = lang === 'vi' ? 'Tiếng Việt' : 'English';
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
@@ -399,52 +326,163 @@
     }
 
     window.onload = () => {
-      editor = CodeMirror.fromTextArea(document.getElementById('sandboxEditor'), {
+      editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
         mode: 'python',
         theme: 'dracula',
         lineNumbers: true,
         indentUnit: 4,
         lineWrapping: true
       });
-      editor.setValue('import time\n\nprint("=== ALPYTIDE API ONLINE ===")\nfor i in range(1, 4):\n    print(f"Đang đếm: {i}")\n    time.sleep(0.3)\n\nval = input("Nhập dữ liệu bất kỳ: ")\nprint(f"Kết quả nhận được: {val}")');
+
+      editor.on('change', () => {
+        const currentFile = projectFiles.find(f => f.name === activeFileName);
+        if (currentFile) {
+          currentFile.content = editor.getValue();
+          saveToLocalStorage();
+        }
+      });
+
+      renderFileList();
+      loadActiveFile();
     };
 
-    function switchTab(tab, event) {
-      document.querySelectorAll('#docTabs .nav-link').forEach(el => el.classList.remove('active'));
-      event.target.closest('.nav-link').classList.add('active');
+    function saveToLocalStorage() {
+      localStorage.setItem('alpytide_files', JSON.stringify(projectFiles));
+    }
 
-      if (tab === 'docs') {
-        document.getElementById('tab-docs').style.display = 'block';
-        document.getElementById('tab-sandbox').style.display = 'none';
-      } else {
-        document.getElementById('tab-docs').style.display = 'none';
-        document.getElementById('tab-sandbox').style.display = 'block';
-        setTimeout(() => editor.refresh(), 100);
+    function renderFileList() {
+      const container = document.getElementById('fileList');
+      container.innerHTML = '';
+      projectFiles.forEach(file => {
+        const div = document.createElement('div');
+        div.className = `file-item ${file.name === activeFileName ? 'active' : ''}`;
+        div.innerHTML = `
+          <span><i class="fa-regular fa-file-code me-2"></i>${file.name}</span>
+          ${file.name !== 'main.py' ? `<i class="fa-solid fa-xmark text-danger" onclick="deleteFile('${file.name}', event)"></i>` : ''}
+        `;
+        div.onclick = () => switchFile(file.name);
+        container.appendChild(div);
+      });
+    }
+
+    function switchFile(fileName) {
+      activeFileName = fileName;
+      renderFileList();
+      loadActiveFile();
+    }
+
+    function loadActiveFile() {
+      const currentFile = projectFiles.find(f => f.name === activeFileName);
+      if (currentFile) {
+        editor.setValue(currentFile.content);
       }
     }
 
+    function createNewFile() {
+      const name = prompt("Nhập tên file mới (ví dụ: helper.py hoặc config.json):");
+      if (name && !projectFiles.some(f => f.name === name)) {
+        projectFiles.push({ name, content: '' });
+        saveToLocalStorage();
+        switchFile(name);
+      }
+    }
+
+    function deleteFile(fileName, e) {
+      e.stopPropagation();
+      if (confirm(`Bạn có chắc muốn xóa file ${fileName}?`)) {
+        projectFiles = projectFiles.filter(f => f.name !== fileName);
+        saveToLocalStorage();
+        switchFile('main.py');
+      }
+    }
+
+    // XỬ LÝ HẠN NGẠCH RATE LIMIT & COUNTDOWN
+    socket.on('rate_update', (data) => {
+      const textEl = document.getElementById('runsLeftText');
+      textEl.textContent = `${data.runsLeft}/30 lượt`;
+
+      if (data.runsLeft === 0 && data.resetTime) {
+        startCountdown(data.resetTime);
+      }
+    });
+
+    let countdownInterval;
+    function startCountdown(resetTime) {
+      clearInterval(countdownInterval);
+      const textEl = document.getElementById('runsLeftText');
+
+      countdownInterval = setInterval(() => {
+        const remaining = Math.ceil((resetTime - Date.now()) / 1000);
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          textEl.textContent = `30/30 lượt`;
+        } else {
+          textEl.textContent = `Chờ reset: ${remaining}s`;
+        }
+      }, 1000);
+    }
+
+    // LẮNG NGHE KẾT QUẢ TỪ BACKEND
     socket.on('output', (res) => {
       const consoleEl = document.getElementById('console');
       const span = document.createElement('span');
-      span.style.color = res.type === 'stderr' ? '#ff6b6b' : '#3fb950';
+      span.style.color = res.type === 'stderr' ? '#f85149' : '#3fb950';
       span.textContent = res.data;
       consoleEl.appendChild(span);
       consoleEl.scrollTop = consoleEl.scrollHeight;
     });
 
+    socket.on('files_generated', (files) => {
+      const container = document.getElementById('generatedFilesContainer');
+      container.innerHTML = '';
+      files.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'card bg-dark border-secondary mb-2 p-2';
+        card.innerHTML = `
+          <div class="fw-bold text-info mb-1"><i class="fa-solid fa-file-lines me-1"></i>${f.name}</div>
+          <pre class="bg-black p-2 text-white rounded mb-0" style="max-height: 150px; overflow-y: auto;">${f.content}</pre>
+        `;
+        container.appendChild(card);
+      });
+    });
+
+    socket.on('charts_generated', (charts) => {
+      const container = document.getElementById('generatedChartsContainer');
+      container.innerHTML = '';
+      charts.forEach(c => {
+        const img = document.createElement('img');
+        img.src = c.data;
+        img.className = 'img-fluid rounded border border-secondary mb-2';
+        container.appendChild(img);
+      });
+    });
+
     socket.on('process_exit', (res) => {
       const consoleEl = document.getElementById('console');
       consoleEl.innerHTML += `<div style="color: #8b949e; font-style: italic;">\n[Tiến trình hoàn tất với exit code: ${res.code}]</div>`;
-      document.getElementById('runBtn').disabled = false;
+      toggleInputState(false);
     });
 
-    function runSandboxCode() {
-      document.getElementById('console').innerHTML = "";
-      document.getElementById('runBtn').disabled = true;
-      socket.emit('run_code', editor.getValue());
+    function toggleInputState(running) {
+      document.getElementById('runBtn').disabled = running;
+      document.getElementById('consoleInput').disabled = !running;
+      document.getElementById('sendInputBtn').disabled = !running;
     }
 
-    function sendSandboxInput() {
+    function runCode() {
+      document.getElementById('console').innerHTML = "";
+      toggleInputState(true);
+
+      const mainFile = projectFiles.find(f => f.name === 'main.py');
+      const otherFiles = projectFiles.filter(f => f.name !== 'main.py');
+
+      socket.emit('run_code', {
+        mainCode: mainFile ? mainFile.content : editor.getValue(),
+        files: otherFiles
+      });
+    }
+
+    function sendInput() {
       const input = document.getElementById('consoleInput');
       if (input.value.trim() !== "") {
         socket.emit('input_data', input.value);
@@ -454,8 +492,19 @@
     }
 
     document.getElementById('consoleInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') sendSandboxInput();
+      if (e.key === 'Enter') sendInput();
     });
+
+    function copyCode() { navigator.clipboard.writeText(editor.getSelection() || editor.getValue()); }
+    async function pasteCode() { editor.replaceSelection(await navigator.clipboard.readText()); }
+    function selectAllCode() { editor.setSelection({line: 0, ch: 0}, {line: editor.lineCount(), ch: 0}); }
+    function cutCode() { 
+      const sel = editor.getSelection(); 
+      if (sel) { navigator.clipboard.writeText(sel); editor.replaceSelection(''); } 
+    }
+    function clearCode() { editor.setValue(''); }
+    function clearConsole() { document.getElementById('console').innerHTML = ''; }
+    function copyConsoleLog() { navigator.clipboard.writeText(document.getElementById('console').innerText); }
   </script>
 </body>
 </html>
