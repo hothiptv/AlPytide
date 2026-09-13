@@ -2,662 +2,98 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <!-- Chống Zoom trên thiết bị di động -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tài Liệu Hướng Dẫn & Đề Xuất Tiện Ích - AlPytide Engine v1.2</title>
-  
-  <!-- Bootstrap 5 & FontAwesome -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlPytide IDE</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/pyodide@0.26.2/pyodide.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
   <style>
-    :root {
-      --bg-color: #ffffff;
-      --card-bg: #f8f9fa;
-      --border-color: #e9ecef;
-      --text-main: #212529;
-      --text-sub: #6c757d;
-      --accent-color: #0d6efd;
-    }
-
-    * {
-      box-sizing: border-box;
-      scroll-behavior: smooth;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    code, pre, input, textarea {
-      -webkit-user-select: text !important;
-      user-select: text !important;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-      touch-action: pan-x pan-y;
-      font-size: 15px;
-    }
-
-    .hero-header {
-      background-color: #f8f9fa;
-      border-bottom: 1px solid var(--border-color);
-      padding: 40px 20px 30px 20px;
-      text-align: center;
-    }
-
-    .logo-large {
-      width: 120px;
-      height: 120px;
-      border-radius: 20px;
-      object-fit: cover;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-      margin-bottom: 15px;
-    }
-
-    .badge-v12 {
-      background-color: #0d6efd;
-      color: #fff;
-      font-size: 13px;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-weight: 600;
-    }
-
-    .api-url-box {
-      max-width: 580px;
-      margin: 20px auto 0 auto;
-      background: #ffffff;
-      border: 1px solid #ced4da;
-      border-radius: 30px;
-      padding: 4px 6px 4px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    }
-    .api-url-text {
-      font-family: monospace;
-      font-size: 14px;
-      color: #0d6efd;
-      font-weight: 600;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .doc-card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
-    }
-
-    .sidebar-card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 16px;
-      position: sticky;
-      top: 20px;
-    }
-
-    .nav-doc-link {
-      color: var(--text-sub);
-      text-decoration: none;
-      padding: 9px 12px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-
-    .nav-doc-link:hover, .nav-doc-link.active {
-      background-color: #e9ecef;
-      color: #000;
-      font-weight: 600;
-    }
-
-    .section-title {
-      font-weight: 700;
-      font-size: 20px;
-      color: #000;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 2px solid #e9ecef;
-      padding-bottom: 10px;
-    }
-
-    .code-wrapper {
-      position: relative;
-      margin-top: 12px;
-    }
-
-    pre {
-      background: #1e1e1e !important;
-      border-radius: 8px;
-      padding: 16px;
-      color: #d4d4d4;
-      font-family: 'Fira Code', 'Consolas', monospace;
-      font-size: 13.5px;
-      line-height: 1.6;
-      overflow-x: auto;
-    }
-
-    .btn-copy-code {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      backdrop-filter: blur(4px);
-      transition: background 0.2s;
-    }
-
-    .btn-copy-code:hover {
-      background: #0d6efd;
-    }
-
-    .table-custom {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-      background: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .table-custom th, .table-custom td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border-color);
-      font-size: 14px;
-    }
-
-    .table-custom th {
-      background: #f1f3f5;
-      color: #000;
-      font-weight: 600;
-    }
-
-    .note-box {
-      background-color: #e7f5ff;
-      border-left: 4px solid #1c7ed6;
-      padding: 14px 16px;
-      border-radius: 6px;
-      margin-top: 15px;
-      font-size: 14px;
-    }
-
-    .floating-tools {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 1000;
-    }
-    .btn-floating {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: #212529;
-      color: #fff;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .btn-floating:hover {
-      transform: scale(1.1);
-      background: #0d6efd;
-    }
-
-    .rate-status-card {
-      background: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 16px;
-      margin-top: 15px;
-    }
+    body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, sans-serif; }
+    .CodeMirror { height: 350px; border-radius: 8px; font-size: 15px; }
+    #output { background-color: #1e293b; color: #38bdf8; min-height: 120px; font-family: monospace; border-radius: 8px; padding: 12px; white-space: pre-wrap; }
   </style>
 </head>
-<body oncontextmenu="return false;">
-
-  <!-- BANNER TẬP TRUNG -->
-  <div class="hero-header">
-    <div class="container d-flex flex-column align-items-center">
-      <img src="https://raw.githubusercontent.com/hothiptv/AlPytide/main/IMG_0711.png" alt="AlPytide Logo" class="logo-large">
-      <h2 class="fw-bold text-dark mb-1">AlPytide API Engine</h2>
-      <p class="text-secondary small mb-2">Môi Trường Thực Thi Python Đa Năng Cho Lập Trình Viên</p>
-      
-      <div class="d-flex align-items-center gap-2 mb-2">
-        <span class="badge-v12">v1.2</span>
-      </div>
-
-      <!-- THANH SAO CHÉP API URL -->
-      <div class="api-url-box w-100">
-        <div class="d-flex align-items-center gap-2 overflow-hidden">
-          <i class="fa-solid fa-link text-secondary"></i>
-          <span class="api-url-text" id="apiUrlText">https://alpytide.onrender.com/</span>
-        </div>
-        <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="copyApiUrl(this)">
-          <i class="fa-regular fa-copy me-1"></i> Sao Chép URL
-        </button>
-      </div>
+<body class="p-4">
+  <div class="container max-w-4xl">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="fw-bold text-warning m-0">⚡ AlPytide IDE</h3>
+      <a href="/docs" class="btn btn-outline-info btn-sm">Tài liệu API</a>
     </div>
-  </div>
 
-  <!-- NỘI DUNG CHÍNH -->
-  <div class="container my-4 pb-5">
-    <div class="row g-4">
-      
-      <!-- CỘT TRÁI: SIDEBAR -->
-      <div class="col-lg-3">
-        <div class="sidebar-card">
-          <div class="fw-bold text-uppercase text-secondary small mb-2 px-2">Mục Lục Hướng Dẫn</div>
-          <nav class="d-flex flex-column gap-1">
-            <a href="#feature-requests" class="nav-doc-link active"><i class="fa-solid fa-list-check text-primary"></i> Đề Xuất Tiện Ích Mới</a>
-            <a href="#overview" class="nav-doc-link"><i class="fa-solid fa-compass"></i> 1. Tổng Quan API v1.2</a>
-            <a href="#rate-limit" class="nav-doc-link"><i class="fa-solid fa-gauge-high"></i> 2. Hạn Ngạch & Cooldown</a>
-            <a href="#websocket-api" class="nav-doc-link"><i class="fa-solid fa-plug"></i> 3. WebSocket API Event</a>
-            <a href="#matplotlib" class="nav-doc-link"><i class="fa-solid fa-chart-line"></i> 4. Xuất Ảnh & Biểu Đồ</a>
-            <a href="#cloud-db" class="nav-doc-link"><i class="fa-solid fa-cloud-arrow-up"></i> 5. Kết Nối Database</a>
-          </nav>
-
-          <hr class="my-3 text-muted">
-
-          <div class="px-2">
-            <div class="fw-bold text-uppercase text-secondary small mb-2">Công Cụ Tiện Ích</div>
-            <div class="d-grid gap-2">
-              <button class="btn btn-outline-dark btn-sm text-start" onclick="copyApiUrlSidebar()">
-                <i class="fa-solid fa-copy me-2 text-primary"></i> Copy Endpoint API
-              </button>
-              <button class="btn btn-outline-dark btn-sm text-start" onclick="toggleFontSize()">
-                <i class="fa-solid fa-text-height me-2 text-success"></i> Đổi Cỡ Chữ Văn Bản
-              </button>
-              <button class="btn btn-outline-dark btn-sm text-start" onclick="scrollToTop()">
-                <i class="fa-solid fa-arrow-up me-2 text-warning"></i> Về Đầu Trang
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CỘT PHẢI: TÀI LIỆU VÀ BẢNG ĐỀ XUẤT TIỆN ÍCH -->
-      <div class="col-lg-9">
-
-        <!-- BẢNG YÊU CẦU BỔ SUNG CÁC TÍNH NĂNG TIỆN ÍCH -->
-        <div id="feature-requests" class="doc-card border-primary">
-          <h3 class="section-title text-primary"><i class="fa-solid fa-sliders"></i> Đề Xuất Bổ Sung Tiện Ích Cho Trình Biên Dịch</h3>
-          <p class="text-secondary mt-2">Dưới đây là danh sách chi tiết các nút thao tác tiện ích cần tích hợp vào giao diện IDE/Editor nhằm tối ưu hóa trải nghiệm lập trình:</p>
-
-          <table class="table-custom">
-            <thead>
-              <tr>
-                <th style="width: 20%;">Tên Nút Tiện Ích</th>
-                <th style="width: 25%;">Biểu Tượng (Icon)</th>
-                <th>Chức Năng & Giải Thích Chi Tiết</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Nút Run (Chạy Code)</strong></td>
-                <td><span class="badge bg-success"><i class="fa-solid fa-play me-1"></i> Run Code</span></td>
-                <td>Gửi toàn bộ mã nguồn trong khung soạn thảo qua Socket.io tới Server Docker cách ly, nhận stream kết quả thời gian thực và cập nhật đếm số lượt chạy còn lại.</td>
-              </tr>
-              <tr>
-                <td><strong>Nút Sao Chép</strong></td>
-                <td><span class="badge bg-primary"><i class="fa-regular fa-copy me-1"></i> Sao Chép</span></td>
-                <td>Trích xuất toàn bộ văn bản mã nguồn đang sửa đổi và đưa vào bộ nhớ tạm (Clipboard) của thiết bị để dễ dàng chia sẻ hoặc sao lưu.</td>
-              </tr>
-              <tr>
-                <td><strong>Nút Cắt Code</strong></td>
-                <td><span class="badge bg-warning text-dark"><i class="fa-solid fa-scissors me-1"></i> Cắt Code</span></td>
-                <td>Sao chép mã nguồn vào bộ nhớ tạm đồng thời làm sạch toàn bộ khung soạn thảo code. Cập nhật ngay trạng thái lưu tự động.</td>
-              </tr>
-              <tr>
-                <td><strong>Nút Xóa Code</strong></td>
-                <td><span class="badge bg-danger"><i class="fa-solid fa-trash me-1"></i> Xóa Code</span></td>
-                <td>Xóa nhanh toàn bộ ký tự trong khung biên dịch, giúp người dùng sẵn sàng viết dự án mới mà không cần thao tác chọn tất cả thủ công.</td>
-              </tr>
-              <tr>
-                <td><strong>Nút Xóa Console</strong></td>
-                <td><span class="badge bg-secondary"><i class="fa-solid fa-eraser me-1"></i> Xóa Console</span></td>
-                <td>Làm sạch màn hình hiển thị log xuất bản (`stdout`, `stderr`), xóa các hình ảnh biểu đồ đã xuất để trả lại màn hình theo dõi gọn gàng.</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div class="note-box mt-3">
-            <i class="fa-solid fa-lightbulb text-warning me-1"></i> <strong>Cơ chế Lưu Trạng Thái LocalStorage:</strong> Mọi thao tác biên dịch, đoạn mã đang chỉnh sửa cũng như thông số lượt dùng (`runsLeft`, `resetTime`) đều được lưu lại tự động trong `localStorage`. Nhờ đó, khi tải lại trang hoặc mở lại trình duyệt, toàn bộ trạng thái làm việc sẽ được khôi phục chính xác.
-          </div>
-        </div>
-        
-        <!-- SECTION 1: TỔNG QUAN -->
-        <div id="overview" class="doc-card">
-          <h3 class="section-title"><i class="fa-solid fa-cube text-primary"></i> 1. Tổng Quan API v1.2</h3>
-          <p class="text-secondary mt-3">
-            <strong>AlPytide Engine v1.2</strong> là nền tảng điện toán đám mây cung cấp môi trường Sandbox cách ly dựa trên Docker Container. Hệ thống cho phép thực thi thời gian thực mã Python, hỗ trợ đa tập tin, kết nối cơ sở dữ liệu và tự động trả về biểu đồ đồ họa qua WebSockets.
-          </p>
-          
-          <div class="row g-3 mt-1">
-            <div class="col-md-4">
-              <div class="p-3 bg-white rounded border">
-                <i class="fa-solid fa-stopwatch fs-4 text-warning mb-2"></i>
-                <h6 class="fw-bold text-dark">Timeout 1 Phút (60s)</h6>
-                <p class="small text-secondary mb-0">Hệ thống gửi cảnh báo nếu tiến trình xử lý quá 60 giây và tự động hủy hoàn toàn tiến trình kéo dài quá 10 phút để tránh treo server.</p>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="p-3 bg-white rounded border">
-                <i class="fa-solid fa-boxes-stacked fs-4 text-info mb-2"></i>
-                <h6 class="fw-bold text-dark">Thư Viện Phong Phú</h6>
-                <p class="small text-secondary mb-0">Tích hợp sẵn các thư viện: <code>matplotlib</code>, <code>numpy</code>, <code>pandas</code>, <code>requests</code>, <code>firebase-admin</code>, <code>supabase</code>,...</p>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="p-3 bg-white rounded border">
-                <i class="fa-solid fa-folder-tree fs-4 text-success mb-2"></i>
-                <h6 class="fw-bold text-dark">Đa Tập Tin & Xuất File</h6>
-                <p class="small text-secondary mb-0">Cho phép đính kèm nhiều file code/data phụ trợ và tự động trả về các tập tin xuất dữ liệu (.txt, .json, .png).</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 2: HẠN NGẠCH LƯỢT CHẠY -->
-        <div id="rate-limit" class="doc-card">
-          <h3 class="section-title"><i class="fa-solid fa-shield-halved text-primary"></i> 2. Cơ Chế Hạn Ngạch, Đếm Lượt & Cooldown</h3>
-          <p class="text-secondary mt-2">
-            Hệ thống áp dụng cơ chế tự động đếm lượt chạy và thời gian hồi (Rate Limit) bền vững dựa trên IP người dùng kết hợp lưu file local `rate_limits.json` phía Server:
-          </p>
-
-          <table class="table-custom">
-            <thead>
-              <tr>
-                <th>Thông số hệ thống</th>
-                <th>Giá trị quy định</th>
-                <th>Mô tả chi tiết cơ chế hoạt động</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Hạn ngạch thực thi</strong></td>
-                <td><span class="badge bg-primary">30 lượt / IP</span></td>
-                <td>Mỗi thiết bị được cấp tối đa 30 lần yêu cầu chạy code Python. Dữ liệu này được lưu liên tục vào `localStorage` ở client.</td>
-              </tr>
-              <tr>
-                <td><strong>Thời gian hồi (Cooldown)</strong></td>
-                <td><span class="badge bg-secondary">3 phút (180 giây)</span></td>
-                <td>Khi dùng hết 30 lượt, hệ thống kích hoạt thời gian đếm ngược 3 phút. Trong thời gian này, các yêu cầu `run_code` mới bị từ chối.</td>
-              </tr>
-              <tr>
-                <td><strong>Cảnh báo Timeout</strong></td>
-                <td><span class="badge bg-warning text-dark">60 giây</span></td>
-                <td>Mọi tiến trình xử lý liên tục quá 60 giây sẽ nhận cảnh báo từ server để tối ưu hóa thuật toán.</td>
-              </tr>
-              <tr>
-                <td><strong>Tự động ngắt cứng</strong></td>
-                <td><span class="badge bg-danger">10 phút</span></td>
-                <td>Tiến trình chạy vô hạn (vòng lặp lặp vô tận) kéo dài tới 10 phút sẽ bị Server ngắt đứt để bảo vệ tài nguyên.</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- KHUNG DEMO MONITOR TRẠNG THÁI LOCALSTORAGE -->
-          <div class="rate-status-card">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="fw-bold text-dark"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Trạng Thái Lượt Dùng (Đồng Bộ LocalStorage):</span>
-              <button class="btn btn-outline-danger btn-sm" onclick="resetLocalQuota()"><i class="fa-solid fa-rotate-left me-1"></i> Reset Thử Nghiệm</button>
-            </div>
-            <div class="progress mb-2" style="height: 18px;">
-              <div id="quotaProgressBar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%;">30 / 30 Lượt</div>
-            </div>
-            <div class="d-flex justify-content-between small text-secondary">
-              <span>Lượt còn lại: <strong id="runsLeftText" class="text-dark">30</strong> lượt</span>
-              <span>Thời gian Reset Cooldown: <strong id="cooldownText" class="text-danger">Sẵn sàng</strong></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 3: WEBSOCKET EVENT DOCUMENTATION -->
-        <div id="websocket-api" class="doc-card">
-          <h3 class="section-title"><i class="fa-solid fa-network-wired text-primary"></i> 3. Tài Liệu Sự Kiện Socket.io Backend & Client Code</h3>
-          <p class="text-secondary">Dưới đây là các sự kiện chuẩn Socket.io để kết nối và nhận stream dữ liệu từ Server <code>https://alpytide.onrender.com/</code>:</p>
-
-          <h6 class="fw-bold text-dark mt-4">1. Gửi Mã Nguồn Cần Chạy (`run_code`)</h6>
-          <div class="code-wrapper">
-            <button class="btn-copy-code" onclick="copySnippet(this)"><i class="fa-regular fa-copy"></i> Sao Chép</button>
-            <pre><code>const socket = io("https://alpytide.onrender.com/");
-
-// Gửi code chính cùng danh sách file phụ kèm theo
-socket.emit('run_code', {
-  mainCode: `import time\nprint("Đang xử lý dữ liệu...")\ntime.sleep(1)\nprint("Hoàn tất!")`,
-  files: [
-    { name: "data.txt", content: "Dữ liệu đầu vào" }
-  ]
-});</code></pre>
-          </div>
-
-          <h6 class="fw-bold text-dark mt-4">2. Cập Nhật Hạn Ngạch & Đếm Ngược (`rate_update`)</h6>
-          <div class="code-wrapper">
-            <button class="btn-copy-code" onclick="copySnippet(this)"><i class="fa-regular fa-copy"></i> Sao Chép</button>
-            <pre><code>socket.on('rate_update', (data) => {
-  // data: { runsLeft: 29, resetTime: 1726000000000, maxRuns: 30 }
-  localStorage.setItem('alpytide_runsLeft', data.runsLeft);
-  localStorage.setItem('alpytide_resetTime', data.resetTime || '');
-  
-  console.log(`Lượt còn lại: ${data.runsLeft}/${data.maxRuns}`);
-});</code></pre>
-          </div>
-
-          <h6 class="fw-bold text-dark mt-4">3. Lắng Nghe Kết Quả Đầu Ra (`output`)</h6>
-          <div class="code-wrapper">
-            <button class="btn-copy-code" onclick="copySnippet(this)"><i class="fa-regular fa-copy"></i> Sao Chép</button>
-            <pre><code>socket.on('output', (data) => {
-  if (data.type === 'stdout') {
-    console.log("[LOG]:", data.data);
-  } else if (data.type === 'stderr') {
-    console.error("[LỖI]:", data.data);
-  }
-});</code></pre>
-          </div>
-        </div>
-
-        <!-- SECTION 4: VẼ BIỂU ĐỒ MATPLOTLIB -->
-        <div id="matplotlib" class="doc-card">
-          <h3 class="section-title"><i class="fa-solid fa-chart-line text-primary"></i> 4. Xuất Đồ Họa & Biểu Đồ Matplotlib</h3>
-          <p class="text-secondary">API v1.2 hỗ trợ tự động quét file hình ảnh được tạo ra trong tiến trình thi hành code (`.png`, `.jpg`). Hệ thống mã hóa Base64 và truyền qua sự kiện `charts_generated` để client hiển thị trực tiếp lên giao diện.</p>
-          
-          <div class="code-wrapper">
-            <button class="btn-copy-code" onclick="copySnippet(this)"><i class="fa-regular fa-copy"></i> Sao Chép</button>
-            <pre><code>import matplotlib.pyplot as plt
-
-plt.plot([1, 2, 3, 4], [10, 20, 25, 30], marker='o')
-plt.title("Biểu Đồ Mẫu AlPytide Engine")
-plt.savefig("chart.png") # Server sẽ tự động gửi file chart.png này về Web
-print("Đã xuất biểu đồ thành công!")</code></pre>
-          </div>
-        </div>
-
-        <!-- SECTION 5: KẾT NỐI DATABASE ĐÁM MÂY -->
-        <div id="cloud-db" class="doc-card">
-          <h3 class="section-title"><i class="fa-solid fa-cloud-arrow-up text-primary"></i> 5. Kết Nối Database Đa Nền Tảng Đám Mây</h3>
-          <p class="text-secondary">
-            API AlPytide v1.2 được tích hợp đầy đủ các driver kết nối tới các dịch vụ Cloud Database phổ biến như <strong>Google Firebase Firestore, Supabase, MongoDB Atlas, PostgreSQL, MySQL</strong>. Bạn chỉ cần viết script Python kết nối tới SDK tương ứng trong mã nguồn.
-          </p>
-        </div>
-
-      </div>
+    <div class="mb-3">
+      <textarea id="editor"></textarea>
     </div>
-  </div>
 
-  <!-- THANH THAO TÁC TIỆN ÍCH NỔI GÓC DƯỚI -->
-  <div class="floating-tools">
-    <button class="btn-floating" title="Sao Chép URL API" onclick="copyApiUrlSidebar()">
-      <i class="fa-solid fa-link"></i>
-    </button>
-    <button class="btn-floating" title="Cuộn Lên Đầu Trang" onclick="scrollToTop()">
-      <i class="fa-solid fa-chevron-up"></i>
-    </button>
+    <div class="d-flex gap-2 mb-3">
+      <button id="run-btn" class="btn btn-success fw-bold px-4" disabled>
+        ⏳ Đang khởi tạo Python...
+      </button>
+      <button onclick="clearOutput()" class="btn btn-outline-secondary">Xóa Output</button>
+    </div>
+
+    <div>
+      <label class="form-label text-secondary fw-semibold">Kết quả (Console Output):</label>
+      <div id="output">Đang tải môi trường Python WebAssembly...</div>
+    </div>
   </div>
 
   <script>
-    const API_URL = "https://alpytide.onrender.com/";
-
-    // QUẢN LÝ LOCALSTORAGE CHO HẠN NGẠCH LƯỢT DÙNG
-    function initLocalStorageQuota() {
-      let runsLeft = localStorage.getItem('alpytide_runsLeft');
-      let resetTime = localStorage.getItem('alpytide_resetTime');
-
-      if (runsLeft === null) {
-        runsLeft = 30;
-        localStorage.setItem('alpytide_runsLeft', runsLeft);
-      } else {
-        runsLeft = parseInt(runsLeft);
-      }
-
-      if (resetTime && Date.now() >= parseInt(resetTime)) {
-        runsLeft = 30;
-        resetTime = null;
-        localStorage.setItem('alpytide_runsLeft', 30);
-        localStorage.removeItem('alpytide_resetTime');
-      }
-
-      updateQuotaUI(runsLeft, resetTime);
-    }
-
-    function updateQuotaUI(runsLeft, resetTime) {
-      const progressBar = document.getElementById('quotaProgressBar');
-      const runsLeftText = document.getElementById('runsLeftText');
-      const cooldownText = document.getElementById('cooldownText');
-
-      const percent = Math.max(0, Math.min(100, (runsLeft / 30) * 100));
-      progressBar.style.width = percent + '%';
-      progressBar.innerText = `${runsLeft} / 30 Lượt`;
-
-      if (runsLeft <= 5) {
-        progressBar.className = "progress-bar bg-danger progress-bar-striped progress-bar-animated";
-      } else if (runsLeft <= 15) {
-        progressBar.className = "progress-bar bg-warning progress-bar-striped progress-bar-animated";
-      } else {
-        progressBar.className = "progress-bar bg-success progress-bar-striped progress-bar-animated";
-      }
-
-      runsLeftText.innerText = runsLeft;
-
-      if (resetTime && Date.now() < parseInt(resetTime)) {
-        const remainingSec = Math.ceil((parseInt(resetTime) - Date.now()) / 1000);
-        cooldownText.innerText = `Chờ ${remainingSec} giây`;
-      } else {
-        cooldownText.innerText = "Sẵn sàng";
-      }
-    }
-
-    function resetLocalQuota() {
-      localStorage.setItem('alpytide_runsLeft', 30);
-      localStorage.removeItem('alpytide_resetTime');
-      initLocalStorageQuota();
-      alert("Đã khôi phục hạn ngạch 30 lượt dùng trên LocalStorage!");
-    }
-
-    // SAO CHÉP URL & MÃ NGUỒN
-    function copyApiUrl(btn) {
-      navigator.clipboard.writeText(API_URL).then(() => {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Đã Chép!';
-        btn.classList.replace('btn-primary', 'btn-success');
-        setTimeout(() => {
-          btn.innerHTML = originalText;
-          btn.classList.replace('btn-success', 'btn-primary');
-        }, 2000);
-      });
-    }
-
-    function copyApiUrlSidebar() {
-      navigator.clipboard.writeText(API_URL).then(() => {
-        alert("Đã sao chép đường dẫn API Engine: " + API_URL);
-      });
-    }
-
-    function copySnippet(btn) {
-      const pre = btn.nextElementSibling;
-      navigator.clipboard.writeText(pre.innerText).then(() => {
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check text-success"></i> Đã Chép!';
-        setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
-      });
-    }
-
-    function scrollToTop() {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    let fontState = 0;
-    function toggleFontSize() {
-      const sizes = ['15px', '16.5px', '18px'];
-      fontState = (fontState + 1) % sizes.length;
-      document.body.style.fontSize = sizes[fontState];
-    }
-
-    // THEO DÕI CUỘN TRANG (ACTIVE NAVIGATION)
-    const sections = document.querySelectorAll('.doc-card');
-    const navLinks = document.querySelectorAll('.nav-doc-link');
-
-    window.addEventListener('scroll', () => {
-      let current = '';
-      sections.forEach(section => {
-        const sectionTop = section.offsetTop - 150;
-        if (pageYOffset >= sectionTop) {
-          current = section.getAttribute('id');
+    let editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+      mode: 'python',
+      theme: 'dracula',
+      lineNumbers: true,
+      indentUnit: 4,
+      tabSize: 4,
+      indentWithTabs: false,
+      electricChars: true,
+      extraKeys: {
+        "Enter": function(cm) {
+          let cursor = cm.getCursor();
+          let line = cm.getLine(cursor.line);
+          cm.replaceSelection("\n", "end");
+          if (line.trim().endsWith(":")) {
+            cm.indentLine(cursor.line + 1, "add");
+          } else {
+            cm.indentLine(cursor.line + 1, "smart");
+          }
         }
+      }
+    });
+
+    editor.setValue(`def chao_mung(ten):\n    print(f"Xin chào {ten} từ AlPytide API!")\n\nfor i in range(3):\n    chao_mung(f"User {i+1}")`);
+
+    let pyodide;
+    const outputEl = document.getElementById('output');
+    const runBtn = document.getElementById('run-btn');
+
+    async function initPyodide() {
+      pyodide = await loadPyodide({
+        stdout: (text) => { outputEl.innerText += text + "\n"; },
+        stderr: (text) => { outputEl.innerText += "[Lỗi] " + text + "\n"; }
       });
+      outputEl.innerText = "Sẵn sàng chạy Python!";
+      runBtn.innerText = "▶ Chạy Code";
+      runBtn.classList.remove('btn-success');
+      runBtn.classList.add('btn-primary');
+      runBtn.disabled = false;
+    }
+    initPyodide();
 
-      navLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === '#' + current) {
-          link.classList.add('active');
-        }
-      });
+    runBtn.addEventListener('click', async () => {
+      outputEl.innerText = "";
+      try {
+        await pyodide.runPythonAsync(editor.getValue());
+      } catch (err) {
+        outputEl.innerText = err.message;
+      }
     });
 
-    // KHỞI TẠO
-    window.addEventListener('DOMContentLoaded', () => {
-      initLocalStorageQuota();
-      setInterval(initLocalStorageQuota, 1000); // Tự động đếm ngược mỗi giây
-    });
-
-    // BẢO VỆ GIAO DIỆN CHỐNG INSPECT / ZOOM
-    document.addEventListener('keydown', function (e) {
-      if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) e.preventDefault();
-      if (e.key === 'F12' || e.keyCode === 123) return false;
-      if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) return false;
-      if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S')) return false;
-    });
-
-    document.addEventListener('touchstart', function (event) {
-      if (event.touches.length > 1) event.preventDefault();
-    }, { passive: false });
+    function clearOutput() {
+      outputEl.innerText = "";
+    }
   </script>
 </body>
 </html>
