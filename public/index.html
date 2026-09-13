@@ -15,8 +15,6 @@
   <style>
     * { 
       box-sizing: border-box; 
-      -webkit-user-select: none;
-      user-select: none;
     }
 
     .CodeMirror, #terminal {
@@ -88,6 +86,7 @@
       flex-direction: column;
       min-height: 0;
       position: relative;
+      overflow: hidden;
     }
 
     .console-wrapper {
@@ -103,26 +102,35 @@
       padding-bottom: 70px;
     }
 
-    /* Thanh hiển thị nội dung đầy đủ khi bấm vào label bị rút gọn */
+    /* Popup hiển thị đầy đủ tiêu đề input với hiệu ứng mượt mà */
     .prompt-popup {
       display: none;
       position: absolute;
-      bottom: 60px;
-      left: 8px;
-      right: 8px;
-      background-color: #21262d;
-      border: 1px solid #30363d;
+      bottom: 65px;
+      left: 10px;
+      right: 10px;
+      background-color: #161b22;
+      border: 1px solid #58a6ff;
       color: #58a6ff;
-      padding: 10px;
-      border-radius: 6px;
+      padding: 12px;
+      border-radius: 8px;
       font-size: 12px;
       font-family: "Fira Code", monospace;
       z-index: 20;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
       word-break: break-all;
+      opacity: 0;
+      transform: translateY(10px) scale(0.95);
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
-    /* Thanh Input bám đáy trong khung */
+    .prompt-popup.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Thanh Input bám đáy với hiệu ứng trượt lên */
     .floating-input-bar {
       display: none;
       background-color: #161b22;
@@ -134,6 +142,13 @@
       border-bottom-right-radius: 6px;
       flex-shrink: 0;
       position: relative;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.1, 1, 0.1, 1);
+    }
+
+    .floating-input-bar.show {
+      display: flex;
+      transform: translateY(0);
     }
 
     .floating-input-bar .label-container {
@@ -145,6 +160,14 @@
       color: #58a6ff;
       cursor: pointer;
       flex-shrink: 0;
+      padding: 2px 4px;
+      border-radius: 4px;
+      background: rgba(88, 166, 255, 0.1);
+      transition: background 0.2s;
+    }
+
+    .floating-input-bar .label-container:active {
+      background: rgba(88, 166, 255, 0.3);
     }
 
     .floating-input-bar input {
@@ -159,10 +182,12 @@
       outline: none;
       caret-color: #3fb950;
       min-width: 0;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .floating-input-bar input:focus {
       border-color: #58a6ff;
+      box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
     }
 
     /* Spinner Loading */
@@ -186,6 +211,7 @@
       padding: 4px 10px;
       font-size: 13px;
       font-weight: 500;
+      transition: color 0.2s, background-color 0.2s;
     }
 
     .nav-tabs .nav-link.active {
@@ -202,10 +228,15 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
+      transition: transform 0.1s ease, background-color 0.2s;
+    }
+
+    .btn-action:active {
+      transform: scale(0.92);
     }
   </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
   <div class="brand-title text-center mb-1">ALPYTIDE STUDIO (PYTHON ENGINE)</div>
 
@@ -255,16 +286,16 @@
           <div id="terminalText">> Đang kết nối tới Server Python...\n</div>
         </div>
 
-        <!-- Popup hiển thị đầy đủ tiêu đề input khi chạm vào label rút gọn -->
+        <!-- Popup hiệu ứng mượt hiển thị đầy đủ tiêu đề -->
         <div class="prompt-popup" id="promptPopup" onclick="togglePopup()">
           <span id="popupText"></span>
-          <div style="font-size: 10px; color: #8b949e; margin-top: 4px; text-align: right;">(Chạm để đóng)</div>
+          <div style="font-size: 10px; color: #8b949e; margin-top: 6px; text-align: right;">(Chạm để đóng)</div>
         </div>
 
-        <!-- Thanh Input bám đáy trong khung -->
+        <!-- Thanh Input bám đáy có hiệu ứng trượt -->
         <div class="floating-input-bar" id="floatingInputBar">
           <div class="label-container" id="inputPromptLabel" onclick="togglePopup()" title="Chạm để xem đầy đủ">Nhập:</div>
-          <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" placeholder="Chạm để nhập...">
+          <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" placeholder="Nhập giá trị...">
           <button class="btn btn-sm btn-success fw-bold px-3" onclick="sendInput()" style="height: 30px; font-size: 12px; flex-shrink: 0;">Gửi</button>
         </div>
       </div>
@@ -357,17 +388,17 @@
       label.textContent = cleanText;
       popupText.textContent = cleanText;
       
-      bar.style.display = 'flex';
+      bar.classList.add('show');
       inputEl.value = "";
       scrollToBottom();
     }
 
     function togglePopup() {
       const popup = document.getElementById('promptPopup');
-      popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+      popup.classList.toggle('show');
     }
 
-    // Chạm vào vùng thanh input bar (ngoài nút và input) để bật bàn phím
+    // Chạm vào vùng trống của thanh input bar để gọi bàn phím
     document.getElementById('floatingInputBar').addEventListener('click', function(e) {
       if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && !e.target.classList.contains('label-container')) {
         document.getElementById('terminalInput').focus();
@@ -375,8 +406,8 @@
     });
 
     function hideInputBar() {
-      document.getElementById('floatingInputBar').style.display = 'none';
-      document.getElementById('promptPopup').style.display = 'none';
+      document.getElementById('floatingInputBar').classList.remove('show');
+      document.getElementById('promptPopup').classList.remove('show');
     }
 
     function sendInput() {
