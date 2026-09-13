@@ -5,15 +5,15 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(express.json());
 
-// Phục vụ các file tĩnh (bao gồm index.html) trong thư mục gốc
+// Phục vụ tĩnh tất cả các file trong thư mục
 app.use(express.static(__dirname));
 
-// Trả về file index.html khi truy cập đường dẫn gốc hoặc /index
+// Đón tất cả các đường dẫn gốc về index.html
 app.get(['/', '/index', '/index.html'], (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -26,14 +26,18 @@ app.post('/api/run', (req, res) => {
     return res.status(400).json({ output: 'Lỗi: Không tìm thấy mã Python!' });
   }
 
-  const filePath = path.join(__dirname, 'temp_code.py');
+  // Tạo file tạmtemp_code.py độc lập cho mỗi lần chạy
+  const fileName = `temp_${Date.now()}.py`;
+  const filePath = path.join(__dirname, fileName);
 
   fs.writeFile(filePath, code, (err) => {
     if (err) {
       return res.status(500).json({ output: `Lỗi ghi file server: ${err.message}` });
     }
 
+    // Thực thi Python 3 với thời gian chờ tối đa 10 giây
     exec(`python3 "${filePath}"`, { timeout: 10000 }, (error, stdout, stderr) => {
+      // Dọn dẹp file tạm
       fs.unlink(filePath, () => {});
 
       if (error && error.killed) {
