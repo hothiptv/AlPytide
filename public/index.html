@@ -2,21 +2,22 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AlPytide Studio (Python Server Engine)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <title>AlPytide Studio (Python Engine)</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
 
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 
   <style>
     * { 
       box-sizing: border-box; 
       -webkit-user-select: none;
       user-select: none;
+      touch-action: pan-x pan-y;
     }
 
     .CodeMirror, #terminal {
@@ -71,7 +72,7 @@
       word-break: break-all;
     }
 
-    /* Hiệu ứng Spinner Loading ở chính giữa console */
+    /* Spinner Loading */
     .loading-overlay {
       display: none;
       position: absolute;
@@ -84,25 +85,6 @@
       gap: 10px;
       color: #58a6ff;
       z-index: 10;
-    }
-
-    .terminal-input-line {
-      display: inline-flex;
-      width: auto;
-      min-width: 150px;
-      align-items: center;
-    }
-
-    .terminal-input {
-      background: transparent;
-      border: none;
-      color: #ffffff;
-      font-family: inherit;
-      font-size: inherit;
-      outline: none;
-      padding: 0;
-      margin: 0;
-      caret-color: #3fb950;
     }
 
     .nav-tabs .nav-link {
@@ -169,13 +151,13 @@
     </div>
 
     <div class="tab-pane fade" id="output-pane">
-      <div class="console-wrapper" id="terminal" onclick="focusTerminalInput()">
+      <div class="console-wrapper" id="terminal">
         <!-- Spinner Loading -->
         <div class="loading-overlay" id="loadingOverlay">
           <div class="spinner-border text-primary" role="status"></div>
-          <span style="font-size: 12px;">Đang kết nối Server & tải code...</span>
+          <span style="font-size: 12px;">Đang chuẩn bị môi trường...</span>
         </div>
-        <div id="terminalText">> Đang kết nối tới Server...</div>
+        <div id="terminalText">> Đang khởi tạo Python Engine...</div>
       </div>
     </div>
   </div>
@@ -186,7 +168,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
 
   <script>
-    const socket = io();
+    let pyodide = null;
 
     const defaultCode = `import time\n\ndef tinh_tong(a, b):\n    return a + b\n\ndef tinh_hieu(a, b):\n    return a - b\n\ndef tinh_tich(a, b):\n    return a * b\n\nwhile True:\n    print("=== SIÊU MÁY TÍNH SERVER ===")\n    print("--- MENU LỰA CHỌN ---")\n    print("1. Phép cộng")\n    print("2. Phép trừ")\n    print("3. Phép nhân")\n    print("4. Thoát")\n    luachon = input("Mời bạn chọn (1-4): ")\n    if luachon == "4":\n        print("Đang tắt Siêu máy tính... Tạm biệt!")\n        break\n    elif luachon in ["1", "2", "3"]:\n        a = float(input("Nhập số thứ nhất: "))\n        b = float(input("Nhập số thứ hai: "))\n        if luachon == "1":\n            print("Kết quả:", tinh_tong(a, b))\n        elif luachon == "2":\n            print("Kết quả:", tinh_hieu(a, b))\n        elif luachon == "3":\n            print("Kết quả:", tinh_tich(a, b))\n    print("\\n")`;
 
@@ -206,24 +188,33 @@
       localStorage.setItem('alpytide_py_code', editor.getValue());
     });
 
-    socket.on('connect', () => {
-      document.getElementById('terminalText').textContent = "> Đã kết nối tới Server Python thành công!\n";
-    });
+    // Bridge để nhận prompt pop-up từ JS
+    window.jsPromptBridge = function(promptText) {
+      const val = prompt(promptText || "Nhập dữ liệu:") || "";
+      appendOutput((promptText || "") + val + "\n", "#ffffff");
+      return val;
+    };
 
-    socket.on('output', (res) => {
-      // Khi nhận dữ liệu đầu tiên, ẩn spinner đi
-      document.getElementById('loadingOverlay').style.display = 'none';
-      const color = res.type === 'stderr' ? '#ff6b6b' : '#3fb950';
-      appendOutput(res.data, color);
-      ensureInputLine();
-    });
+    async function initPyodide() {
+      pyodide = await loadPyodide({
+        stdout: (text) => appendOutput(text + "\n"),
+        stderr: (text) => appendOutput(text + "\n", "#ff6b6b")
+      });
 
-    socket.on('process_exit', (data) => {
-      document.getElementById('loadingOverlay').style.display = 'none';
-      appendOutput(`\n[Tiến trình kết thúc với mã ${data.code}]\n`, "#8b949e");
-      removeInputLine();
-      document.getElementById('runBtn').disabled = false;
-    });
+      // Override input() đồng bộ chuẩn Pyodide bằng pop-up
+      await pyodide.runPythonAsync(`
+import js
+def custom_input(prompt_text=""):
+    return js.jsPromptBridge(str(prompt_text))
+
+import builtins
+builtins.input = custom_input
+      `);
+
+      document.getElementById('terminalText').textContent = "> Python Engine sẵn sàng!\n";
+    }
+
+    initPyodide();
 
     function switchTab(tabName) {
       const editTab = document.getElementById('edit-tab');
@@ -254,50 +245,13 @@
       scrollToBottom();
     }
 
-    function ensureInputLine() {
-      const terminalText = document.getElementById('terminalText');
-      let inputEl = document.getElementById('activeInput');
-      
-      if (!inputEl) {
-        const inputContainer = document.createElement('span');
-        inputContainer.className = 'terminal-input-line';
-        inputContainer.id = 'inputContainer';
-        inputContainer.innerHTML = `<input type="text" id="activeInput" class="terminal-input" autofocus autocomplete="off" spellcheck="false">`;
-        terminalText.appendChild(inputContainer);
-        inputEl = document.getElementById('activeInput');
-
-        inputEl.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            const val = inputEl.value;
-            inputContainer.remove();
-            appendOutput(val + "\n", "#ffffff");
-            socket.emit('input_data', val);
-          }
-        });
-      } else {
-        terminalText.appendChild(document.getElementById('inputContainer'));
-      }
-      inputEl.focus();
-      scrollToBottom();
-    }
-
-    function removeInputLine() {
-      const el = document.getElementById('inputContainer');
-      if (el) el.remove();
-    }
-
-    function focusTerminalInput() {
-      const activeInput = document.getElementById('activeInput');
-      if (activeInput) activeInput.focus();
-    }
-
     function scrollToBottom() {
       const terminal = document.getElementById('terminal');
       terminal.scrollTop = terminal.scrollHeight;
     }
 
-    function runPythonCode() {
-      // 1. Trượt ngay sang tab Output
+    async function runPythonCode() {
+      // 1. Tự trượt sang tab Output
       switchTab('output');
 
       const terminalText = document.getElementById('terminalText');
@@ -306,12 +260,30 @@
 
       terminalText.innerHTML = "";
       
-      // 2. Hiển thị vòng xoay Spinner Loading
+      // 2. Hiện spinner loading
       loadingOverlay.style.display = 'flex';
       runBtn.disabled = true;
 
-      // 3. Gửi mã Python về Backend thực thi
-      socket.emit('run_code', editor.getValue());
+      if (!pyodide) {
+        appendOutput("> Đang chờ Python Engine khởi tạo...\n", "#e5c07b");
+      }
+
+      try {
+        const code = editor.getValue();
+
+        // Giả lập delay ngắn để hiện hiệu ứng xoay mượt mà
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // 3. Tắt spinner và chạy code
+        loadingOverlay.style.display = 'none';
+        await pyodide.runPythonAsync(code);
+      } catch (err) {
+        loadingOverlay.style.display = 'none';
+        appendOutput("\n" + err.message, "#ff6b6b");
+      } finally {
+        loadingOverlay.style.display = 'none';
+        runBtn.disabled = false;
+      }
     }
 
     function clearCode() {
@@ -322,7 +294,7 @@
     }
 
     function clearOutput() {
-      document.getElementById('terminalText').innerHTML = "";
+      document.getElementById('terminalText').innerHTML = "> Đang chờ thực thi...\n";
     }
 
     function copyCode() {
