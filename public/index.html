@@ -100,7 +100,26 @@
       white-space: pre-wrap;
       word-break: break-all;
       min-height: 0;
-      padding-bottom: 70px; /* Đảm bảo không bị thanh input che mất dòng cuối */
+      padding-bottom: 70px;
+    }
+
+    /* Thanh hiển thị nội dung đầy đủ khi bấm vào label bị rút gọn */
+    .prompt-popup {
+      display: none;
+      position: absolute;
+      bottom: 60px;
+      left: 8px;
+      right: 8px;
+      background-color: #21262d;
+      border: 1px solid #30363d;
+      color: #58a6ff;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: "Fira Code", monospace;
+      z-index: 20;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      word-break: break-all;
     }
 
     /* Thanh Input bám đáy trong khung */
@@ -113,6 +132,18 @@
       gap: 8px;
       border-bottom-left-radius: 6px;
       border-bottom-right-radius: 6px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .floating-input-bar .label-container {
+      max-width: 110px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+      color: #58a6ff;
+      cursor: pointer;
       flex-shrink: 0;
     }
 
@@ -127,6 +158,7 @@
       font-size: 13px;
       outline: none;
       caret-color: #3fb950;
+      min-width: 0;
     }
 
     .floating-input-bar input:focus {
@@ -223,11 +255,17 @@
           <div id="terminalText">> Đang kết nối tới Server Python...\n</div>
         </div>
 
+        <!-- Popup hiển thị đầy đủ tiêu đề input khi chạm vào label rút gọn -->
+        <div class="prompt-popup" id="promptPopup" onclick="togglePopup()">
+          <span id="popupText"></span>
+          <div style="font-size: 10px; color: #8b949e; margin-top: 4px; text-align: right;">(Chạm để đóng)</div>
+        </div>
+
         <!-- Thanh Input bám đáy trong khung -->
         <div class="floating-input-bar" id="floatingInputBar">
-          <span id="inputPromptLabel" style="font-size: 12px; color: #58a6ff; white-space: nowrap;">Nhập:</span>
-          <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" placeholder="Chạm vào đây để nhập...">
-          <button class="btn btn-sm btn-success fw-bold px-3" onclick="sendInput()" style="height: 30px; font-size: 12px;">Gửi</button>
+          <div class="label-container" id="inputPromptLabel" onclick="togglePopup()" title="Chạm để xem đầy đủ">Nhập:</div>
+          <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" placeholder="Chạm để nhập...">
+          <button class="btn btn-sm btn-success fw-bold px-3" onclick="sendInput()" style="height: 30px; font-size: 12px; flex-shrink: 0;">Gửi</button>
         </div>
       </div>
     </div>
@@ -268,7 +306,6 @@
       const color = res.type === 'stderr' ? '#ff6b6b' : '#3fb950';
       appendOutput(res.data, color);
       
-      // Bắt mọi dòng output có chứa dấu : hoặc ? để hiện thanh input
       if (res.data.includes(":") || res.data.includes("?")) {
         showInputBar(res.data.trim());
       }
@@ -314,20 +351,32 @@
       const bar = document.getElementById('floatingInputBar');
       const inputEl = document.getElementById('terminalInput');
       const label = document.getElementById('inputPromptLabel');
+      const popupText = document.getElementById('popupText');
       
-      label.textContent = promptText || "Nhập:";
+      const cleanText = promptText || "Nhập:";
+      label.textContent = cleanText;
+      popupText.textContent = cleanText;
+      
       bar.style.display = 'flex';
       inputEl.value = "";
       scrollToBottom();
     }
 
-    // Lắng nghe sự kiện chạm vào toàn bộ thanh input bar để iOS Safari kích hoạt bàn phím lập tức
-    document.getElementById('floatingInputBar').addEventListener('click', function() {
-      document.getElementById('terminalInput').focus();
+    function togglePopup() {
+      const popup = document.getElementById('promptPopup');
+      popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Chạm vào vùng thanh input bar (ngoài nút và input) để bật bàn phím
+    document.getElementById('floatingInputBar').addEventListener('click', function(e) {
+      if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && !e.target.classList.contains('label-container')) {
+        document.getElementById('terminalInput').focus();
+      }
     });
 
     function hideInputBar() {
       document.getElementById('floatingInputBar').style.display = 'none';
+      document.getElementById('promptPopup').style.display = 'none';
     }
 
     function sendInput() {
