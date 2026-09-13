@@ -22,13 +22,6 @@ app.post('/api/run', (req, res) => {
     return res.status(400).json({ output: 'Lỗi: Không có code Python!' });
   }
 
-  // 1. Kiểm tra nhanh xem code có chứa input() không để ngắt ngay
-  if (/input\s*\(/.test(code)) {
-    return res.json({ 
-      output: '⚠️ Lỗi: Web IDE hiện chưa hỗ trợ hàm input() tương tác trực tiếp. Hãy gán biến trực tiếp (ví dụ: luachon = "1") để chạy thử code!' 
-    });
-  }
-
   const fileName = `run_${Date.now()}_${Math.floor(Math.random() * 1000)}.py`;
   const filePath = path.join(__dirname, fileName);
 
@@ -37,12 +30,15 @@ app.post('/api/run', (req, res) => {
       return res.status(500).json({ output: `Lỗi ghi file server: ${err.message}` });
     }
 
-    // Chạy trực tiếp Python với timeout 15 giây
+    // Chạy trực tiếp Python với giới hạn thời gian 15 giây
     exec(`python3 "${filePath}"`, { timeout: 15000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
       fs.unlink(filePath, () => {});
 
       if (error && error.killed) {
-        return res.json({ status: 'timeout', output: '⚠️ Lỗi: Chương trình chạy quá 15 giây hoặc dính vòng lặp vô hạn (while True)!' });
+        return res.json({ 
+          status: 'timeout', 
+          output: '⚠️ Lỗi: Chương trình chạy quá 15 giây hoặc kẹt lệnh chờ nhập liệu (input) vô hạn!' 
+        });
       }
 
       let result = stdout || '';
