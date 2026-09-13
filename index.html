@@ -3,12 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AlPytide IDE - Lua Engine</title>
+  <title>AlPytide IDE - Python Engine</title>
   
-  <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  
-  <!-- CodeMirror CSS & Themes -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
 
@@ -62,13 +59,13 @@
 </head>
 <body>
 
-  <div class="brand-title text-center mb-1">ALPYTIDE STUDIO (LUA ENGINE)</div>
+  <div class="brand-title text-center mb-1">ALPYTIDE STUDIO (PYTHON ENGINE)</div>
 
   <!-- Topbar -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <ul class="nav nav-tabs border-0" id="ideTabs">
       <li class="nav-item">
-        <button class="nav-link active" id="edit-tab" onclick="switchTab('edit')">main.lua</button>
+        <button class="nav-link active" id="edit-tab" onclick="switchTab('edit')">main.py</button>
       </li>
       <li class="nav-item">
         <button class="nav-link" id="output-tab" onclick="switchTab('output')">Output</button>
@@ -76,7 +73,7 @@
     </ul>
 
     <div class="d-flex align-items-center gap-1">
-      <button class="btn btn-primary btn-sm px-3 fw-bold" id="runBtn" onclick="runLuaCode()">▶ Run</button>
+      <button class="btn btn-primary btn-sm px-3 fw-bold" id="runBtn" onclick="runPythonCode()">▶ Run</button>
 
       <div class="dropdown">
         <button class="btn btn-outline-secondary btn-sm" type="button" id="menuBtn" data-bs-toggle="dropdown" aria-expanded="false">☰</button>
@@ -88,7 +85,7 @@
     </div>
   </div>
 
-  <!-- Content -->
+  <!-- Main Content -->
   <div class="tab-content" id="ideTabContent">
     <div class="tab-pane fade show active" id="edit-pane">
       <textarea id="codeEditor"></textarea>
@@ -99,21 +96,21 @@
     </div>
   </div>
 
-  <!-- JS Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/lua/lua.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
 
   <script>
     const SERVER_URL = window.location.origin + '/api/run';
 
-    // Đọc mã lưu từ LocalStorage
-    const initialCode = localStorage.getItem('alpytide_lua_code') || `-- AlPytide IDE Lua Engine\nlocal function greet(name)\n    print("Xin chào " .. name .. " từ AlPytide Server!")\nend\n\ngreet("Trọng An")`;
+    // Mã mẫu test thử gọi API mạng ngoài
+    const defaultCode = `import requests\nimport time\n\nprint("=== ĐANG TEST KẾT NỐI MẠNG ===")\nres = requests.get('https://api.github.com')\nprint("Trạng thái kết nối API:", res.status_code)\nprint("Thời gian Server:", time.strftime("%H:%M:%S"))`;
 
-    // Cấu hình CodeMirror
+    const initialCode = localStorage.getItem('alpytide_py_code') || defaultCode;
+
     const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
-      mode: 'lua',
+      mode: 'python',
       theme: 'dracula',
       lineNumbers: true,
       lineWrapping: true,
@@ -123,12 +120,12 @@
 
     editor.setValue(initialCode);
 
-    // Lưu mã liên tục khi gõ
+    // Tự động lưu mã vào máy người dùng
     editor.on('change', () => {
-      localStorage.setItem('alpytide_lua_code', editor.getValue());
+      localStorage.setItem('alpytide_py_code', editor.getValue());
     });
 
-    // Hàm chuyển Tab thủ công (Khắc phục triệt để lỗi không chuyển được tab)
+    // Chuyển Tab cực mượt
     function switchTab(tabName) {
       const editTab = document.getElementById('edit-tab');
       const outputTab = document.getElementById('output-tab');
@@ -140,7 +137,7 @@
         outputTab.classList.remove('active');
         editPane.classList.add('show', 'active');
         outputPane.classList.remove('show', 'active');
-        setTimeout(() => editor.refresh(), 50); // Refresh lại CodeMirror khi quay về tab edit
+        setTimeout(() => editor.refresh(), 50);
       } else {
         outputTab.classList.add('active');
         editTab.classList.remove('active');
@@ -149,24 +146,23 @@
       }
     }
 
-    // Thực thi mã Lua với AbortController (Tránh bị ngâm / lag quá lâu)
-    async function runLuaCode() {
+    // Chạy code Python
+    async function runPythonCode() {
       const code = editor.getValue();
       const consoleOutput = document.getElementById('consoleOutput');
       const runBtn = document.getElementById('runBtn');
 
-      // 1. Xóa toàn bộ output cũ trước khi in mới
+      // 1. Xóa sạch Output cũ
       consoleOutput.textContent = "";
 
       runBtn.disabled = true;
       runBtn.innerText = '⏳ Running...';
 
-      // 2. Chuyển sang Tab Output ngay lập tức
+      // 2. Chuyển sang Tab Output ngay
       switchTab('output');
 
-      // Thiết lập giới hạn thời gian phản hồi ở Client là 6 giây
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 giây timeout cho client
 
       try {
         const response = await fetch(SERVER_URL, {
@@ -181,7 +177,7 @@
         consoleOutput.textContent = data.output;
       } catch (err) {
         if (err.name === 'AbortError') {
-          consoleOutput.textContent = "> Lỗi: Server phản hồi quá lâu (Quá thời hạn 6 giây)!";
+          consoleOutput.textContent = "> Lỗi: Server xử lý quá lâu (Timeout 12s)!";
         } else {
           consoleOutput.textContent = "> Lỗi kết nối Server: " + err.message;
         }
@@ -193,7 +189,7 @@
 
     function copyCode() {
       navigator.clipboard.writeText(editor.getValue());
-      alert("Đã sao chép mã Lua!");
+      alert("Đã sao chép code Python!");
     }
 
     function copyLog() {
