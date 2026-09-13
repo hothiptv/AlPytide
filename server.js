@@ -9,7 +9,6 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Cấu hình theo tài liệu Engine v1.2
 const EXECUTION_TIMEOUT = 60 * 1000; // Timeout 1 phút (60 giây)
@@ -56,6 +55,369 @@ app.get('/api/status', (req, res) => {
     max_execution_limit: '10 minutes',
     rate_limit: '30 executions per 3 minutes'
   });
+});
+
+// ROUTE GIAO DIỆN CHÍNH (Full IDE Python với CodeMirror, Tô màu, Số dòng không lệch, Tự động Indent)
+app.get('/', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlPytide Python IDE v1.2</title>
+  
+  <!-- Bootstrap 5 & FontAwesome -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- CodeMirror 5 (IDE Code Editor Chuyên Nghiệp) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/matchbrackets.min.js"></script>
+
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #181824;
+      --card-bg: #21222c;
+      --border-color: #343746;
+      --text-main: #f8f8f2;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .navbar-custom {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 20px;
+    }
+    .editor-container, .console-container {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 15px;
+    }
+    /* Đảm bảo khung CodeMirror thẳng hàng, số dòng không bị lệch */
+    .CodeMirror {
+      height: 400px;
+      border-radius: 6px;
+      font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .CodeMirror-gutters {
+      background-color: #282a36;
+      border-right: 1px solid var(--border-color);
+    }
+    .console-output {
+      width: 100%;
+      height: 350px;
+      background-color: #11121d;
+      color: #50fa7b;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13.5px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .output-stderr { color: #ff5555; }
+    .output-stdout { color: #50fa7b; }
+    .output-info { color: #8be9fd; }
+    .chart-preview-img {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      margin-top: 10px;
+    }
+    .warning-banner {
+      background-color: #ffb86c22;
+      border: 1px solid #ffb86c;
+      color: #ffb86c;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar-custom d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <span class="fw-bold fs-5 text-white"><i class="fa-brands fa-python text-warning me-2"></i>AlPytide Web IDE</span>
+      <span class="badge bg-primary rounded-pill">v1.2</span>
+    </div>
+    <div id="serverStatus" class="badge bg-secondary"><i class="fa-solid fa-signal me-1"></i> Đang kết nối...</div>
+  </nav>
+
+  <div class="container-fluid my-3 px-3">
+    <!-- THANH HẠN NGẠCH -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="p-3 rounded border" style="background-color: var(--card-bg); border-color: var(--border-color) !important;">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small fw-bold text-white"><i class="fa-solid fa-gauge-high text-warning me-1"></i> Hạn Ngạch Thực Thi (30 Lượt / 3 Phút)</span>
+            <span id="cooldownLabel" class="small text-danger fw-bold">Sẵn sàng</span>
+          </div>
+          <div class="progress" style="height: 12px;">
+            <div id="quotaBar" class="progress-bar bg-success" role="progressbar" style="width: 100%;">30 / 30 Lượt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <!-- CỘT EDIT CODE -->
+      <div class="col-lg-7">
+        <div class="editor-container">
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <button id="btnRun" class="btn btn-success btn-sm px-3" onclick="runCode()">
+              <i class="fa-solid fa-play me-1"></i> Run Code
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="copyCode()"><i class="fa-regular fa-copy me-1"></i> Sao Chép</button>
+            <button class="btn btn-warning btn-sm text-dark" onclick="cutCode()"><i class="fa-solid fa-scissors me-1"></i> Cắt Code</button>
+            <button class="btn btn-danger btn-sm" onclick="clearCode()"><i class="fa-solid fa-trash me-1"></i> Xóa Code</button>
+            <button class="btn btn-secondary btn-sm ms-auto" onclick="clearConsole()"><i class="fa-solid fa-eraser me-1"></i> Xóa Console</button>
+          </div>
+
+          <!-- CẢNH BÁO DÒNG/CÚ PHÁP -->
+          <div id="warningBanner" class="warning-banner mb-2">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> <span id="warningMsg"></span>
+          </div>
+
+          <!-- KHUNG CODE MIRROR -->
+          <textarea id="codeEditor"></textarea>
+        </div>
+      </div>
+
+      <!-- CỘT CONSOLE OUTPUT -->
+      <div class="col-lg-5">
+        <div class="console-container">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-bold text-white"><i class="fa-solid fa-terminal me-2"></i>Console Output</span>
+            <span id="executionTimer" class="small text-secondary">0.0s</span>
+          </div>
+
+          <div id="consoleOutput" class="console-output"></div>
+
+          <div id="chartContainer" class="mt-2 text-center" style="display: none;">
+            <hr class="border-secondary my-2">
+            <span class="small text-info fw-bold"><i class="fa-solid fa-chart-line me-1"></i>Biểu Đồ Xuất Bản:</span>
+            <div id="chartList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let socket;
+    let editor;
+    let runsLeft = 30;
+    let resetTime = null;
+    let timerInterval = null;
+
+    // Khởi tạo CodeMirror IDE
+    window.onload = () => {
+      editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+        mode: 'python',
+        theme: 'dracula',
+        lineNumbers: true, // Cột số dòng chính xác
+        indentUnit: 4, // Tự động thụt lề 1 tab = 4 khoảng trắng
+        tabSize: 4,
+        indentWithTabs: false,
+        smartIndent: true, // Tự động nhảy lề khi xuống dòng sau dấu ":"
+        matchBrackets: true,
+        autoCloseBrackets: true
+      });
+
+      // Lấy code cũ từ LocalStorage
+      const savedCode = localStorage.getItem('alpytide_code_backup');
+      if (savedCode) {
+        editor.setValue(savedCode);
+      } else {
+        editor.setValue(\`# Hỗ trợ đầy đủ thư viện: numpy, pandas, matplotlib, requests,...
+import numpy as np
+import matplotlib.pyplot as plt
+
+print("Chào mừng bạn đến với AlPytide Python IDE v1.2!")
+
+# Tự động nhảy lề khi xuống dòng sau cấu trúc điều kiện/vòng lặp:
+for i in range(1, 4):
+    print(f"-> Đang xử lý bước {i}...")
+
+# Thử nghiệm tạo biểu đồ Matplotlib
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+plt.plot(x, y, label='Sóng Sin')
+plt.title('Biểu đồ thử nghiệm')
+plt.grid(True)
+plt.savefig('chart.png')
+print("Đã xuất biểu đồ chart.png thành công!")\`);
+      }
+
+      // Kiểm tra và tự động cảnh báo dòng/cú pháp
+      editor.on('change', () => {
+        const code = editor.getValue();
+        localStorage.setItem('alpytide_code_backup', code);
+        checkCodeWarnings(code);
+      });
+
+      initSocket();
+    };
+
+    // Kiểm tra và hiển thị cảnh báo
+    function checkCodeWarnings(code) {
+      const banner = document.getElementById('warningBanner');
+      const msg = document.getElementById('warningMsg');
+      const lines = code.split('\\n');
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim().endsWith(':') && i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          if (nextLine.trim() !== '' && !nextLine.startsWith(' ') && !nextLine.startsWith('\\t')) {
+            msg.innerText = \`Cảnh báo dòng \${i + 2}: Thiếu thụt lề (IndentationError) sau câu lệnh khối ở dòng \${i + 1}.\`;
+            banner.style.display = 'block';
+            return;
+          }
+        }
+      }
+      banner.style.display = 'none';
+    }
+
+    function initSocket() {
+      socket = io();
+
+      socket.on('connect', () => {
+        document.getElementById('serverStatus').className = "badge bg-success";
+        document.getElementById('serverStatus').innerHTML = \`<i class="fa-solid fa-circle-check me-1"></i> Server Online\`;
+        appendConsole("System", "Kết nối máy chủ thành công! Cài đặt sẵn sàng.\\n", "info");
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('serverStatus').className = "badge bg-danger";
+        document.getElementById('serverStatus').innerHTML = \`<i class="fa-solid fa-circle-xmark me-1"></i> Mất kết nối\`;
+      });
+
+      socket.on('rate_update', (data) => {
+        runsLeft = data.runsLeft;
+        resetTime = data.resetTime;
+        updateQuotaUI();
+      });
+
+      socket.on('output', (data) => {
+        appendConsole("Python", data.data, data.type);
+      });
+
+      socket.on('charts_generated', (charts) => {
+        const chartContainer = document.getElementById('chartContainer');
+        const chartList = document.getElementById('chartList');
+        chartList.innerHTML = '';
+        charts.forEach(chart => {
+          const img = document.createElement('img');
+          img.src = chart.data;
+          img.className = 'chart-preview-img';
+          chartList.appendChild(img);
+        });
+        chartContainer.style.display = 'block';
+      });
+
+      socket.on('process_exit', (data) => {
+        clearInterval(timerInterval);
+        document.getElementById('btnRun').disabled = false;
+        document.getElementById('btnRun').innerHTML = \`<i class="fa-solid fa-play me-1"></i> Run Code\`;
+        appendConsole("System", \`\\n[Tiến trình kết thúc với mã Exit: \${data.code}]\\n\`, "info");
+      });
+    }
+
+    function runCode() {
+      const code = editor.getValue().trim();
+      if (!code) return alert("Vui lòng nhập code Python!");
+      if (runsLeft <= 0) return alert("Bạn đã hết 30 lượt dùng! Hãy chờ reset.");
+
+      document.getElementById('btnRun').disabled = true;
+      document.getElementById('btnRun').innerHTML = \`<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang chạy...\`;
+      clearConsole();
+
+      let startTime = Date.now();
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        document.getElementById('executionTimer').innerText = \`\${((Date.now() - startTime) / 1000).toFixed(1)}s\`;
+      }, 100);
+
+      socket.emit('run_code', { mainCode: code, files: [] });
+    }
+
+    function copyCode() {
+      navigator.clipboard.writeText(editor.getValue());
+      alert("Đã sao chép code vào bộ nhớ tạm!");
+    }
+
+    function cutCode() {
+      navigator.clipboard.writeText(editor.getValue());
+      editor.setValue('');
+      alert("Đã cắt toàn bộ đoạn mã!");
+    }
+
+    function clearCode() {
+      if (confirm("Xóa toàn bộ mã nguồn?")) editor.setValue('');
+    }
+
+    function clearConsole() {
+      document.getElementById('consoleOutput').innerHTML = '';
+      document.getElementById('chartContainer').style.display = 'none';
+    }
+
+    function appendConsole(source, text, type) {
+      const consoleBox = document.getElementById('consoleOutput');
+      const span = document.createElement('span');
+      span.className = \`output-\${type}\`;
+      span.innerText = text;
+      consoleBox.appendChild(span);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    function updateQuotaUI() {
+      const progressBar = document.getElementById('quotaBar');
+      const cooldownLabel = document.getElementById('cooldownLabel');
+      const percent = Math.max(0, Math.min(100, (runsLeft / 30) * 100));
+      
+      progressBar.style.width = \`\${percent}%\`;
+      progressBar.innerText = \`\${runsLeft} / 30 Lượt\`;
+
+      if (resetTime && Date.now() < parseInt(resetTime)) {
+        const remainingSec = Math.ceil((parseInt(resetTime) - Date.now()) / 1000);
+        cooldownLabel.innerText = \`Reset sau \${remainingSec}s\`;
+      } else {
+        cooldownLabel.innerText = "Sẵn sàng";
+      }
+    }
+
+    setInterval(() => {
+      if (resetTime && Date.now() >= parseInt(resetTime)) {
+        runsLeft = 30;
+        resetTime = null;
+      }
+      updateQuotaUI();
+    }, 1000);
+  </script>
+</body>
+</html>
+  `);
 });
 
 const server = http.createServer(app);
@@ -166,7 +528,7 @@ io.on('connection', (socket) => {
     let formattedCode = (mainCode || '').replace(/\r\n/g, '\n').replace(/\t/g, '    ');
     fs.writeFileSync(mainFilePath, formattedCode, 'utf-8');
 
-    // Thực thi Python
+    // Thực thi Python (Tự động nhận toàn bộ thư viện đã cài trên máy/container)
     const pythonProcess = spawn('python3', ['-u', 'main.py'], { cwd: sessionDir });
 
     // Timer cảnh báo Timeout 1 phút (60 giây) theo tài liệu v1.2
