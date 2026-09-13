@@ -16,30 +16,30 @@ app.get(['/', '/index', '/index.html'], (req, res) => {
 });
 
 app.post('/api/run', (req, res) => {
-  const { code } = req.body;
+  const { code, inputs } = req.body;
 
   if (code === undefined || code === null) {
     return res.status(400).json({ output: 'Lỗi: Không có code Python!' });
   }
 
-  // Tự động mock hàm input() để tránh kẹt vòng lặp vô hạn / timeout
-  const mockedCode = `import sys\nsys.stdin = open('/dev/null', 'r')\n` + code;
-
   const fileName = `run_${Date.now()}_${Math.floor(Math.random() * 1000)}.py`;
   const filePath = path.join(__dirname, fileName);
 
-  fs.writeFile(filePath, mockedCode, (err) => {
+  // Tạo file chứa danh sách input nhập từ client
+  const inputData = Array.isArray(inputs) ? inputs.join('\n') + '\n' : '';
+
+  fs.writeFile(filePath, code, (err) => {
     if (err) {
       return res.status(500).json({ output: `Lỗi ghi file server: ${err.message}` });
     }
 
-    exec(`python3 "${filePath}"`, { timeout: 15000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+    const child = exec(`python3 "${filePath}"`, { timeout: 15000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
       fs.unlink(filePath, () => {});
 
       if (error && error.killed) {
         return res.json({ 
           status: 'timeout', 
-          output: '⚠️ Lỗi: Chương trình dính vòng lặp vô hạn (while True) không có điểm dừng!' 
+          output: '⚠️ Lỗi: Chương trình dính vòng lặp vô hạn (while True)!' 
         });
       }
 
@@ -54,6 +54,10 @@ app.post('/api/run', (req, res) => {
         output: result || 'Chương trình hoàn tất (Không có output).'
       });
     });
+
+    // Truyền dữ liệu nhập từ bàn phím vào stdin của Python
+    child.stdin.write(inputData);
+    child.stdin.end();
   });
 });
 
