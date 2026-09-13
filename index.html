@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-  <title>AlPytide IDE - Python Engine</title>
+  <title>AlPytide IDE - Web Python Terminal</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
 
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+
   <style>
-    /* Chặn bôi đen và thao tác thu phóng trên toàn bộ trang */
     * { 
       box-sizing: border-box; 
       -webkit-user-select: none;
@@ -19,8 +20,7 @@
       touch-action: pan-x pan-y;
     }
 
-    /* Cho phép bôi đen duy nhất ở khung Edit và Output */
-    .CodeMirror, .console-output {
+    .CodeMirror, #terminal {
       -webkit-user-select: text !important;
       user-select: text !important;
     }
@@ -57,17 +57,37 @@
       border: 1px solid #282c34;
     }
 
-    .console-output {
+    .console-wrapper {
       height: calc(100vh - 85px);
       background-color: #0d1117;
       color: #3fb950;
       padding: 10px;
       font-family: "Fira Code", monospace;
       font-size: 13px;
-      white-space: pre-wrap;
-      overflow-y: auto;
       border: 1px solid #30363d;
       border-radius: 6px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .terminal-input-line {
+      display: inline-flex;
+      width: 100%;
+      align-items: center;
+    }
+
+    .terminal-input {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: inherit;
+      outline: none;
+      flex-grow: 1;
+      padding: 0;
+      margin: 0;
+      caret-color: #3fb950;
     }
 
     .nav-tabs .nav-link {
@@ -76,7 +96,6 @@
       padding: 4px 10px;
       font-size: 13px;
       font-weight: 500;
-      cursor: pointer;
     }
 
     .nav-tabs .nav-link.active {
@@ -135,7 +154,9 @@
     </div>
 
     <div class="tab-pane fade" id="output-pane">
-      <div class="console-output" id="consoleOutput">> Đang chờ thực thi...</div>
+      <div class="console-wrapper" id="terminal" onclick="focusTerminalInput()">
+        <div id="terminalText">> Đang khởi tạo Python Engine...</div>
+      </div>
     </div>
   </div>
 
@@ -145,9 +166,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
 
   <script>
-    const SERVER_URL = '/api/run';
+    let pyodide = null;
+    let inputResolver = null;
 
-    const defaultCode = `name = input("Nhập tên của bạn: ")\nprint("Xin chào " + name + "!")`;
+    const defaultCode = `while True:\n    print("--- MENU LỰA CHỌN ---")\n    print("1. Phép cộng")\n    print("2. Phép trừ")\n    print("4. Thoát")\n    luachon = input("Mời bạn chọn (1-4): ")\n    if luachon == "4":\n        print("Tạm biệt!")\n        break\n    else:\n        print("Bạn đã chọn:", luachon)`;
+
     const initialCode = localStorage.getItem('alpytide_py_code') !== null ? localStorage.getItem('alpytide_py_code') : defaultCode;
 
     const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
@@ -160,10 +183,31 @@
     });
 
     editor.setValue(initialCode);
-
     editor.on('change', () => {
       localStorage.setItem('alpytide_py_code', editor.getValue());
     });
+
+    // Khởi tạo Pyodide Engine
+    async function initPyodide() {
+      pyodide = await loadPyodide({
+        stdout: (text) => appendOutput(text + "\n"),
+        stderr: (text) => appendOutput(text + "\n", "#ff6b6b")
+      });
+
+      // Override hàm input() chuẩn Python bằng JS Promise Terminal
+      pyodide.setStdin({
+        stdin: () => {
+          return new Promise((resolve) => {
+            inputResolver = resolve;
+            createInputField();
+          });
+        }
+      });
+
+      document.getElementById('terminalText').textContent = "> Python Engine sẵn sàng!\n";
+    }
+
+    initPyodide();
 
     function switchTab(tabName) {
       const editTab = document.getElementById('edit-tab');
@@ -185,65 +229,95 @@
       }
     }
 
+    function appendOutput(text, color = "#3fb950") {
+      const terminalText = document.getElementById('terminalText');
+      const span = document.createElement('span');
+      span.style.color = color;
+      span.textContent = text;
+      terminalText.appendChild(span);
+      scrollToBottom();
+    }
+
+    function createInputField() {
+      const terminalText = document.getElementById('terminalText');
+      const activeInput = document.getElementById('activeInput');
+      if (activeInput) return;
+
+      const inputContainer = document.createElement('span');
+      inputContainer.className = 'terminal-input-line';
+      inputContainer.innerHTML = `<input type="text" id="activeInput" class="terminal-input" autofocus autocomplete="off" spellcheck="false">`;
+
+      terminalText.appendChild(inputContainer);
+      const inputEl = document.getElementById('activeInput');
+      inputEl.focus();
+
+      inputEl.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          const value = inputEl.value;
+          inputContainer.remove();
+          appendOutput(value + "\n", "#ffffff");
+          if (inputResolver) {
+            const resolve = inputResolver;
+            inputResolver = null;
+            resolve(value);
+          }
+        }
+      });
+      scrollToBottom();
+    }
+
+    function focusTerminalInput() {
+      const activeInput = document.getElementById('activeInput');
+      if (activeInput) activeInput.focus();
+    }
+
+    function scrollToBottom() {
+      const terminal = document.getElementById('terminal');
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
     async function runPythonCode() {
-      const code = editor.getValue();
-      const consoleOutput = document.getElementById('consoleOutput');
-      const runBtn = document.getElementById('runBtn');
-
-      // Tự động tìm tất cả lệnh input() trong code để bật bàn phím nhập trước
-      const inputRegex = /input\s*\(\s*(?:["'](.*?)["'])?\s*\)/g;
-      let match;
-      const userInputs = [];
-
-      while ((match = inputRegex.exec(code)) !== null) {
-        const promptText = match[1] || "Mời bạn nhập dữ liệu:";
-        const val = prompt(promptText);
-        userInputs.push(val !== null ? val : "");
+      if (!pyodide) {
+        alert("Python Engine đang tải, vui lòng đợi vài giây!");
+        return;
       }
 
-      consoleOutput.textContent = "";
-      runBtn.disabled = true;
-      runBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
+      const code = editor.getValue();
+      const terminalText = document.getElementById('terminalText');
+      terminalText.innerHTML = "";
       switchTab('output');
 
-      try {
-        const response = await fetch(SERVER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, inputs: userInputs })
-        });
+      const runBtn = document.getElementById('runBtn');
+      runBtn.disabled = true;
 
-        const data = await response.json();
-        consoleOutput.textContent = data.output;
+      try {
+        await pyodide.runPythonAsync(code);
       } catch (err) {
-        consoleOutput.textContent = "> Lỗi kết nối Server: " + err.message;
+        appendOutput(err.message, "#ff6b6b");
       } finally {
         runBtn.disabled = false;
-        runBtn.innerHTML = '<i class="fa-solid fa-play me-1"></i>Run';
       }
     }
 
     function clearCode() {
-      if (confirm("Xóa toàn bộ code trong trình biên soạn?")) {
+      if (confirm("Xóa toàn bộ code?")) {
         editor.setValue("");
         localStorage.removeItem('alpytide_py_code');
       }
     }
 
     function clearOutput() {
-      document.getElementById('consoleOutput').textContent = "> Đang chờ thực thi...";
+      document.getElementById('terminalText').innerHTML = "> Đang chờ thực thi...\n";
     }
 
     function copyCode() {
       navigator.clipboard.writeText(editor.getValue());
-      alert("Đã sao chép code Python!");
+      alert("Đã sao chép code!");
     }
 
     function copyLog() {
-      const consoleOutput = document.getElementById('consoleOutput');
-      navigator.clipboard.writeText(consoleOutput.textContent);
-      alert("Đã sao chép Console Log!");
+      navigator.clipboard.writeText(document.getElementById('terminalText').innerText);
+      alert("Đã sao chép Output!");
     }
   </script>
 </body>
