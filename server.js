@@ -1,98 +1,108 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const { spawn, execSync } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const cors = require('cors');
 
 const app = express();
-app.use(cors()); // Mở CORS để các web khác gọi vào API thoải mái
+app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Tự động kiểm tra và cài đặt các thư viện Python cần thiết khi khởi động
-const REQUIRED_MODULES = ['colorama', 'requests']; 
-console.log('>[AlPytide API] Đang kiểm tra thư viện Python...');
-REQUIRED_MODULES.forEach(mod => {
-    try {
-        require('child_process').execSync(`python3 -m pip install ${mod}`);
-    } catch (e) {
-        console.log(`> Không thể cài ${mod}, bỏ qua...`);
-    }
+// API Endpoint kiểm tra trạng thái Engine
+app.get('/api/status', (req, res) => {
+  res.json({
+    status: 'online',
+    engine: 'AlPytide Python Engine (Docker)',
+    version: '1.0.0',
+    timeout_limit: '15 seconds'
+  });
 });
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
-});
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Endpoint API HTTP đơn giản cho các web khác kiểm tra trạng thái Server
-app.get('/api/status', (req, res) => {
-    res.json({ status: 'online', engine: 'AlPytide Python Engine', version: '1.0.0' });
+  cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
 const processes = new Map();
+const EXECUTION_TIMEOUT = 15000; // Giới hạn 15 giây chống quá tải Container
 
 io.on('connection', (socket) => {
-    console.log(`> Client kết nối API: ${socket.id}`);
+  socket.on('run_code', (code) => {
+    // Nếu client đang có tiến trình cũ chưa xong thì dọn dẹp trước
+    if (processes.has(socket.id)) {
+      clearTimeout(processes.get(socket.id).timer);
+      processes.get(socket.id).proc.kill();
+    }
 
-    socket.on('run_code', (code) => {
-        if (processes.has(socket.id)) {
-            processes.get(socket.id).kill();
-        }
+    // Chuẩn hóa Tab (4 space) và ký tự xuống dòng
+    let formattedCode = code.replace(/\r\n/g, '\n').replace(/\t/g, '    ');
 
-        // 1. Sửa lỗi cú pháp dòng & Chuẩn hóa 1 Tab thành 4 space
-        let formattedCode = code
-            .replace(/\r\n/g, '\n')
-            .replace(/\t/g, '    ');
+    // Chạy Python bằng lệnh trong Docker container
+    const pythonProcess = spawn('python3', ['-u', '-c', formattedCode]);
 
-        // 2. Chạy Python với tham số -u (Unbuffered) để đẩy dữ liệu realtime
-        const pythonProcess = spawn('python3', ['-u', '-c', formattedCode]);
-        processes.set(socket.id, pythonProcess);
+    // Đếm ngược Timeout phòng trường hợp code dính vòng lặp vô tận
+    const timer = setTimeout(() => {
+      if (processes.has(socket.id)) {
+        pythonProcess.kill();
+        socket.emit('output', { type: 'stderr', data: '\n[Lỗi: Thời gian thực thi vượt quá giới hạn 15s]\n' });
+        socket.emit('process_exit', { code: 124 });
+        processes.delete(socket.id);
+      }
+    }, EXECUTION_TIMEOUT);
 
-        // Lắng nghe dữ liệu đầu ra (stdout)
-        pythonProcess.stdout.on('data', (data) => {
-            const outputText = data.toString('utf-8');
-            socket.emit('output', { type: 'stdout', data: outputText });
-        });
+    processes.set(socket.id, { proc: pythonProcess, timer });
 
-        // Lắng nghe báo lỗi (stderr)
-        pythonProcess.stderr.on('data', (data) => {
-            const errorText = data.toString('utf-8');
-            socket.emit('output', { type: 'stderr', data: errorText });
-        });
-
-        pythonProcess.on('close', (code) => {
-            processes.delete(socket.id);
-            socket.emit('process_exit', { code });
-        });
-
-        pythonProcess.on('error', (err) => {
-            socket.emit('output', { type: 'stderr', data: `Lỗi API Server: ${err.message}\n` });
-            processes.delete(socket.id);
-            socket.emit('process_exit', { code: 1 });
-        });
+    // Đẩy dữ liệu Realtime stdout
+    pythonProcess.stdout.on('data', (data) => {
+      socket.emit('output', { type: 'stdout', data: data.toString('utf-8') });
     });
 
-    // Nhận dữ liệu input từ người dùng truyền vào stdin của Python
-    socket.on('input_data', (data) => {
-        const pythonProcess = processes.get(socket.id);
-        if (pythonProcess && pythonProcess.stdin.writable) {
-            pythonProcess.stdin.write(data + '\n');
-        }
+    // Đẩy dữ liệu Realtime stderr
+    pythonProcess.stderr.on('data', (data) => {
+      socket.emit('output', { type: 'stderr', data: data.toString('utf-8') });
     });
 
-    socket.on('disconnect', () => {
-        if (processes.has(socket.id)) {
-            processes.get(socket.id).kill();
-            processes.delete(socket.id);
-        }
-        console.log(`> Client ngắt kết nối: ${socket.id}`);
+    // Khi tiến trình kết thúc
+    pythonProcess.on('close', (exitCode) => {
+      if (processes.has(socket.id)) {
+        clearTimeout(processes.get(socket.id).timer);
+        processes.delete(socket.id);
+      }
+      socket.emit('process_exit', { code: exitCode });
     });
+
+    // Xử lý khi xảy ra lỗi tiến trình
+    pythonProcess.on('error', (err) => {
+      socket.emit('output', { type: 'stderr', data: `Lỗi Container: ${err.message}\n` });
+      if (processes.has(socket.id)) {
+        clearTimeout(processes.get(socket.id).timer);
+        processes.delete(socket.id);
+      }
+      socket.emit('process_exit', { code: 1 });
+    });
+  });
+
+  // Nhận dữ liệu nhập từ giao diện (stdin)
+  socket.on('input_data', (data) => {
+    const processData = processes.get(socket.id);
+    if (processData && processData.proc.stdin.writable) {
+      processData.proc.stdin.write(data + '\n');
+    }
+  });
+
+  // Khi ngắt kết nối thì ngắt luôn tiến trình Python tương ứng
+  socket.on('disconnect', () => {
+    if (processes.has(socket.id)) {
+      clearTimeout(processes.get(socket.id).timer);
+      processes.get(socket.id).proc.kill();
+      processes.delete(socket.id);
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`=== AlPytide API Server đang chạy tại port ${PORT} ===`);
+  console.log(`=== AlPytide API Engine Container running on port ${PORT} ===`);
 });
