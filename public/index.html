@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
   <title>AlPytide Studio</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -76,24 +76,24 @@
       overflow-y: auto;
       white-space: pre-wrap;
       word-break: break-all;
-      padding-bottom: 50px; /* Chừa khoảng trống để không bị che bởi thanh input nổi */
+      padding-bottom: 70px;
     }
 
-    /* Thanh Floating Input ghim đáy, tự nổi lên theo bàn phím điện thoại */
+    /* Thanh Floating Input ghim nổi hẳn lên trên bàn phím điện thoại */
     .floating-input-bar {
       display: none;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      position: fixed;
+      bottom: 6px;
+      left: 6px;
+      right: 6px;
       background-color: #161b22;
-      border-top: 1px solid #30363d;
+      border: 1px solid #30363d;
       padding: 8px 12px;
       align-items: center;
       gap: 8px;
-      border-bottom-left-radius: 6px;
-      border-bottom-right-radius: 6px;
-      z-index: 100;
+      border-radius: 6px;
+      z-index: 9999;
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.6);
     }
 
     .floating-input-bar input {
@@ -203,7 +203,7 @@
           <div id="terminalText">> Đang kết nối tới Server Python...\n</div>
         </div>
 
-        <!-- Thanh Input Nổi Ghim Đáy (Bật lên khi Python gọi input()) -->
+        <!-- Thanh Input Nổi Ghim Lên Trên Bàn Phím Điện Thoại -->
         <div class="floating-input-bar" id="floatingInputBar">
           <span id="inputPromptLabel" style="font-size: 12px; color: #58a6ff; white-space: nowrap;">Nhập:</span>
           <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" placeholder="Nhập giá trị và nhấn Gửi...">
@@ -247,8 +247,6 @@
       document.getElementById('loadingOverlay').style.display = 'none';
       const color = res.type === 'stderr' ? '#ff6b6b' : '#3fb950';
       appendOutput(res.data, color);
-
-      // Tự động bật thanh input nổi khi chương trình yêu cầu nhập liệu
       checkAndShowInputBar(res.data);
     });
 
@@ -294,6 +292,20 @@
       }
     }
 
+    // Tự động neo thanh input nổi lên ngay phía trên bàn phím ảo điện thoại
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateKeyboardPosition);
+      window.visualViewport.addEventListener('scroll', updateKeyboardPosition);
+    }
+
+    function updateKeyboardPosition() {
+      const bar = document.getElementById('floatingInputBar');
+      if (bar.style.display === 'flex') {
+        const keyboardHeight = window.innerHeight - window.visualViewport.height;
+        bar.style.bottom = (keyboardHeight > 0 ? keyboardHeight + 6 : 6) + 'px';
+      }
+    }
+
     function showInputBar(promptText) {
       const bar = document.getElementById('floatingInputBar');
       const inputEl = document.getElementById('terminalInput');
@@ -301,6 +313,7 @@
       
       label.textContent = promptText || "Nhập:";
       bar.style.display = 'flex';
+      updateKeyboardPosition();
       inputEl.value = "";
       inputEl.focus();
       scrollToBottom();
