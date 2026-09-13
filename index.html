@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AlPytide IDE</title>
   
-  <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  
-  <!-- CodeMirror CSS (Tô màu cú pháp Python) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
 
@@ -27,7 +24,6 @@
       letter-spacing: 1.5px;
       font-weight: bold;
     }
-    /* Chỉnh giao diện CodeMirror chuẩn đẹp */
     .CodeMirror {
       height: calc(100vh - 110px) !important;
       font-family: "Fira Code", monospace, "Courier New";
@@ -68,10 +64,10 @@
   <div class="d-flex justify-content-between align-items-center mb-2">
     <ul class="nav nav-tabs border-0" id="ideTabs" role="tablist">
       <li class="nav-item">
-        <button class="nav-link active" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit-pane" type="button">main.py</button>
+        <button class="nav-link active" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit-pane" type="button" role="tab">main.py</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link" id="output-tab" data-bs-toggle="tab" data-bs-target="#output-pane" type="button">Output</button>
+        <button class="nav-link" id="output-tab" data-bs-toggle="tab" data-bs-target="#output-pane" type="button" role="tab">Output</button>
       </li>
     </ul>
 
@@ -79,16 +75,16 @@
       <button class="btn btn-primary btn-sm px-3 fw-bold" id="runBtn" onclick="runPythonCode()">▶ Run</button>
 
       <div class="dropdown">
-        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown">☰</button>
+        <button class="btn btn-outline-secondary btn-sm" type="button" id="menuBtn" data-bs-toggle="dropdown" aria-expanded="false">☰</button>
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-          <li><a class="dropdown-item" href="#" onclick="copyCode()">Sao chép Edit Code</a></li>
-          <li><a class="dropdown-item" href="#" onclick="copyLog()">Sao chép Console Log</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" onclick="copyCode()">Sao chép Edit Code</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" onclick="copyLog()">Sao chép Console Log</a></li>
         </ul>
       </div>
     </div>
   </div>
 
-  <!-- Tab Contents -->
+  <!-- Content -->
   <div class="tab-content" id="ideTabContent">
     <div class="tab-pane fade show active" id="edit-pane" role="tabpanel">
       <textarea id="codeEditor"></textarea>
@@ -101,15 +97,14 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
-  <!-- CodeMirror JS Core & Python Mode -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
 
   <script>
     const SERVER_URL = window.location.origin + '/api/run';
 
-    // Khởi tạo CodeMirror
-    const initialCode = localStorage.getItem('alpytide_code') || `import time\n\nprint("Xin chào từ AlPytide IDE!")\ntime.sleep(1)\nprint("Kết nối Server thành công!")`;
+    const initialCode = localStorage.getItem('alpytide_code') || `import time\n\nprint("Xin chào từ AlPytide IDE!")\n# Server sẽ xử lý kiểm tra cú pháp và chạy code`;
 
     const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
       mode: 'python',
@@ -117,29 +112,28 @@
       lineNumbers: true,
       lineWrapping: true,
       indentUnit: 4,
-      viewportMargin: Infinity
+      autoCloseBrackets: true
     });
 
     editor.setValue(initialCode);
 
-    // Lưu mã code khi gõ
     editor.on('change', () => {
       localStorage.setItem('alpytide_code', editor.getValue());
     });
 
-    // Chạy Code Python
     async function runPythonCode() {
       const code = editor.getValue();
       const consoleOutput = document.getElementById('consoleOutput');
       const runBtn = document.getElementById('runBtn');
 
       runBtn.disabled = true;
-      runBtn.innerText = '⏳ Running...';
-      consoleOutput.textContent = "> Đang kết nối server và thực thi code...\n";
+      runBtn.innerText = '⏳ Processing...';
+      consoleOutput.textContent = "> Gửi code lên Server kiểm tra cú pháp & thực thi...\n";
 
-      // Chuyển sang Tab Output
-      const outputTabTrigger = new bootstrap.Tab(document.getElementById('output-tab'));
-      outputTabTrigger.show();
+      // Mở Tab Output
+      const outputTabBtn = document.getElementById('output-tab');
+      const tab = new bootstrap.Tab(outputTabBtn);
+      tab.show();
 
       try {
         const response = await fetch(SERVER_URL, {
@@ -160,7 +154,7 @@
 
     function copyCode() {
       navigator.clipboard.writeText(editor.getValue());
-      alert("Đã sao chép mã Python!");
+      alert("Đã sao chép code Python!");
     }
 
     function copyLog() {
