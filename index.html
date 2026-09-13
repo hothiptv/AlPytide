@@ -58,6 +58,7 @@
     }
 
     .console-wrapper {
+      position: relative;
       height: calc(100vh - 85px);
       background-color: #0d1117;
       color: #3fb950;
@@ -71,9 +72,25 @@
       word-break: break-all;
     }
 
+    /* Spinner Loading đặt chính giữa console */
+    .loading-overlay {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #58a6ff;
+      z-index: 10;
+    }
+
     .terminal-input-line {
       display: inline-flex;
-      width: 100%;
+      width: auto;
+      min-width: 150px;
       align-items: center;
     }
 
@@ -84,7 +101,6 @@
       font-family: inherit;
       font-size: inherit;
       outline: none;
-      flex-grow: 1;
       padding: 0;
       margin: 0;
       caret-color: #3fb950;
@@ -155,6 +171,11 @@
 
     <div class="tab-pane fade" id="output-pane">
       <div class="console-wrapper" id="terminal" onclick="focusTerminalInput()">
+        <!-- Spinner Loading -->
+        <div class="loading-overlay" id="loadingOverlay">
+          <div class="spinner-border text-primary" role="status"></div>
+          <span style="font-size: 12px;">Đang tải và chuẩn bị code...</span>
+        </div>
         <div id="terminalText">> Đang khởi tạo Python Engine...</div>
       </div>
     </div>
@@ -187,22 +208,35 @@
       localStorage.setItem('alpytide_py_code', editor.getValue());
     });
 
-    // Khởi tạo Pyodide Engine
+    // Hàm gọi từ Python để tương tác input trực tiếp trên Console
+    window.jsInputBridge = function(promptText) {
+      if (promptText) {
+        appendOutput(promptText, "#3fb950");
+      }
+      return new Promise((resolve) => {
+        inputResolver = resolve;
+        createInputField();
+      });
+    };
+
     async function initPyodide() {
       pyodide = await loadPyodide({
         stdout: (text) => appendOutput(text + "\n"),
         stderr: (text) => appendOutput(text + "\n", "#ff6b6b")
       });
 
-      // Override hàm input() chuẩn Python bằng JS Promise Terminal
-      pyodide.setStdin({
-        stdin: () => {
-          return new Promise((resolve) => {
-            inputResolver = resolve;
-            createInputField();
-          });
-        }
-      });
+      // Bọc hàm input() chuẩn Python sang Promise của JS
+      await pyodide.runPythonAsync(`
+import js
+from pyodide.ffi import to_js
+
+def custom_input(prompt_text=""):
+    promise = js.jsInputBridge(str(prompt_text))
+    return await promise
+
+import builtins
+builtins.input = custom_input
+      `);
 
       document.getElementById('terminalText').textContent = "> Python Engine sẵn sàng!\n";
     }
@@ -277,24 +311,37 @@
     }
 
     async function runPythonCode() {
-      if (!pyodide) {
-        alert("Python Engine đang tải, vui lòng đợi vài giây!");
-        return;
-      }
-
-      const code = editor.getValue();
-      const terminalText = document.getElementById('terminalText');
-      terminalText.innerHTML = "";
+      // 1. Trượt sang tab Output ngay lập tức
       switchTab('output');
 
+      const terminalText = document.getElementById('terminalText');
+      const loadingOverlay = document.getElementById('loadingOverlay');
       const runBtn = document.getElementById('runBtn');
+
+      terminalText.innerHTML = "";
+      
+      // 2. Hiện hiệu ứng Spinner Loading trong console
+      loadingOverlay.style.display = 'flex';
       runBtn.disabled = true;
 
+      if (!pyodide) {
+        appendOutput("> Đang chờ Python Engine khởi tạo...\n", "#e5c07b");
+      }
+
       try {
+        const code = editor.getValue();
+        
+        // Giả lập delay nhỏ để hiệu ứng loading hiển thị mượt mà
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 3. Ẩn vòng xoay spinner và thực thi code
+        loadingOverlay.style.display = 'none';
         await pyodide.runPythonAsync(code);
       } catch (err) {
-        appendOutput(err.message, "#ff6b6b");
+        loadingOverlay.style.display = 'none';
+        appendOutput("\n" + err.message, "#ff6b6b");
       } finally {
+        loadingOverlay.style.display = 'none';
         runBtn.disabled = false;
       }
     }
