@@ -3,76 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlPytide API Documentation & Studio</title>
+  <title>AlPytide API - Modern Python Execution Engine</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
   
-  <!-- Load Socket.io Client -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
   <style>
+    :root {
+      --bg-dark: #0d1117;
+      --card-bg: #161b22;
+      --border-color: #30363d;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-purple: #8957e5;
+    }
+
     body { 
-      background-color: #0d1117; 
+      background-color: var(--bg-dark); 
       color: #c9d1d9; 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
     }
+
     .navbar { 
-      background-color: #161b22; 
-      border-bottom: 1px solid #30363d; 
+      background-color: var(--card-bg); 
+      border-bottom: 1px solid var(--border-color); 
     }
-    .nav-link { 
-      color: #8b949e !important; 
+
+    .nav-tabs .nav-link { 
+      color: #8b949e; 
       font-weight: 500; 
+      border: none;
+      padding: 0.5rem 1rem;
       cursor: pointer;
     }
-    .nav-link.active { 
-      color: #58a6ff !important; 
-      border-bottom: 2px solid #58a6ff; 
+
+    .nav-tabs .nav-link.active { 
+      color: var(--accent-blue) !important; 
+      background-color: transparent;
+      border-bottom: 2px solid var(--accent-blue); 
     }
+
     .card { 
-      background-color: #161b22; 
-      border: 1px solid #30363d; 
+      background-color: var(--card-bg); 
+      border: 1px solid var(--border-color); 
       border-radius: 8px; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
+
     pre { 
-      background-color: #0d1117; 
+      background-color: var(--bg-dark); 
       padding: 12px; 
       border-radius: 6px; 
-      border: 1px solid #30363d; 
+      border: 1px solid var(--border-color); 
       color: #7ee787; 
       font-family: "Fira Code", monospace; 
       font-size: 13px; 
       white-space: pre-wrap;
       word-break: break-all;
+      margin-bottom: 0;
     }
-    .badge-get { 
-      background-color: #238636; 
-      color: white; 
-      padding: 4px 8px; 
-      border-radius: 4px; 
-      font-weight: bold; 
+
+    .method-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
     }
-    .badge-ws { 
-      background-color: #8957e5; 
-      color: white; 
-      padding: 4px 8px; 
-      border-radius: 4px; 
-      font-weight: bold; 
-    }
+
+    .badge-get { background-color: #238636; color: white; }
+    .badge-ws { background-color: var(--accent-purple); color: white; }
+
     .CodeMirror { 
-      height: 350px !important; 
+      height: 360px !important; 
       border-radius: 6px; 
-      border: 1px solid #30363d; 
+      border: 1px solid var(--border-color); 
       font-size: 13px; 
     }
+
     #console { 
-      background-color: #0d1117; 
-      border: 1px solid #30363d; 
+      background-color: var(--bg-dark); 
+      border: 1px solid var(--border-color); 
       border-radius: 6px; 
-      height: 350px; 
+      height: 360px; 
       padding: 12px; 
       font-family: "Fira Code", monospace; 
       font-size: 13px; 
@@ -80,39 +97,84 @@
       white-space: pre-wrap; 
       word-break: break-all;
     }
+
+    .recommend-icon-box {
+      background: rgba(88, 166, 255, 0.05);
+      border: 1px solid rgba(88, 166, 255, 0.15);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .recommend-icon-box i {
+      font-size: 1.25rem;
+      color: var(--accent-blue);
+      margin-bottom: 6px;
+    }
   </style>
 </head>
 <body>
 
-  <nav class="navbar navbar-expand-lg mb-4">
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-      <a class="navbar-brand text-white fw-bold" href="#"><i class="fa-solid fa-code text-primary me-2"></i>AlPytide API Docs</a>
-      <ul class="nav nav-tabs border-0" id="docTabs">
-        <li class="nav-item"><a class="nav-link active" onclick="switchTab('docs', event)">Tài liệu API</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="switchTab('sandbox', event)">Thử nghiệm (Sandbox)</a></li>
-      </ul>
+      <a class="navbar-brand text-white fw-bold d-flex align-items-center" href="#">
+        <i class="fa-solid fa-terminal text-primary me-2"></i>AlPytide API Engine
+      </a>
+
+      <div class="d-flex align-items-center gap-3">
+        <ul class="nav nav-tabs border-0" id="docTabs">
+          <li class="nav-item">
+            <a class="nav-link active" onclick="switchTab('docs', event)">
+              <i class="fa-solid fa-book me-1"></i><span data-i18n="tabDocs">Tài liệu API</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" onclick="switchTab('sandbox', event)">
+              <i class="fa-solid fa-flask me-1"></i><span data-i18n="tabSandbox">Sandbox (Thử nghiệm)</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- LỰA CHỌN NGÔN NGỮ -->
+        <div class="dropdown ms-2">
+          <button class="btn btn-outline-secondary btn-sm dropdown-toggle text-white" type="button" data-bs-toggle="dropdown">
+            <i class="fa-solid fa-globe me-1"></i><span id="currentLang">Tiếng Việt</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+            <li><a class="dropdown-item" onclick="changeLanguage('vi')">Tiếng Việt</a></li>
+            <li><a class="dropdown-item" onclick="changeLanguage('en')">English</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
   </nav>
 
-  <div class="container mb-5">
+  <div class="container my-4">
     <!-- TAB TÀI LIỆU -->
     <div id="tab-docs">
-      <div class="row g-4">
-        <div class="col-lg-12">
-          <div class="card p-4">
-            <h3 class="text-white"><i class="fa-solid fa-book text-info me-2"></i>Giới thiệu AlPytide API Engine</h3>
-            <p>AlPytide API Server là hệ thống biên dịch và thực thi Python Realtime dựa trên công nghệ WebSockets. Giúp tích hợp trình chạy Python vào bất kỳ website nào (Neocities, GitHub Pages, Vercel...).</p>
-            <p class="mb-0"><strong>Host Endpoint:</strong> <code>https://alpytide.onrender.com</code></p>
-          </div>
+      <!-- GIỚI THIỆU -->
+      <div class="card p-4 mb-4">
+        <h4 class="text-white fw-bold mb-2" data-i18n="introTitle">Giới thiệu Hệ thống Engine AlPytide API</h4>
+        <p class="text-secondary mb-3" data-i18n="introDesc">
+          AlPytide API là nền tảng điện toán đám mây cung cấp dịch vụ thực thi Python Realtime kết nối bằng WebSockets. Dịch vụ hỗ trợ nhúng dễ dàng vào mọi loại ứng dụng Web (Single Page Application, GitHub Pages, Vercel...).
+        </p>
+        <div>
+          <span class="text-secondary" data-i18n="endpointLabel">Endpoint chính thức:</span> 
+          <code class="text-info bg-dark px-2 py-1 rounded ms-1 border border-secondary">https://alpytide.onrender.com</code>
         </div>
+      </div>
 
+      <!-- DANH SÁCH ENDPOINT & SOCKET -->
+      <div class="row g-4 mb-4">
         <div class="col-lg-6">
           <div class="card p-4 h-100">
-            <h5 class="text-white"><span class="badge-get me-2">GET</span> /api/status</h5>
-            <p class="mt-2">Kiểm tra trạng thái hoạt động của Engine.</p>
-            <h6>URL:</h6>
-            <pre>https://alpytide.onrender.com/api/status</pre>
-            <h6>Response mẫu:</h6>
+            <div class="d-flex align-items-center mb-3">
+              <span class="method-badge badge-get me-2">GET</span>
+              <h5 class="text-white mb-0">/api/status</h5>
+            </div>
+            <p class="text-secondary small" data-i18n="statusDesc">Trích xuất thông số trạng thái hoạt động của hệ thống Engine.</p>
+            <h6 class="text-white fs-6" data-i18n="responseLabel">Cấu trúc dữ liệu trả về:</h6>
             <pre>{
   "status": "online",
   "engine": "AlPytide Python Engine (Docker)",
@@ -124,30 +186,105 @@
 
         <div class="col-lg-6">
           <div class="card p-4 h-100">
-            <h5 class="text-white"><span class="badge-ws me-2">WebSocket</span> Socket.io Connection</h5>
-            <p class="mt-2">Kết nối trực tiếp tới Server Render qua Socket.io Client.</p>
-            <ul class="mb-0">
-              <li><code>run_code</code> (Emit): Gửi chuỗi code Python sang Server.</li>
-              <li><code>input_data</code> (Emit): Gửi dữ liệu nhập (stdin).</li>
-              <li><code>output</code> (On): Nhận dữ liệu đầu ra (stdout / stderr).</li>
-              <li><code>process_exit</code> (On): Báo hiệu khi mã chạy xong.</li>
+            <div class="d-flex align-items-center mb-3">
+              <span class="method-badge badge-ws me-2">WebSocket</span>
+              <h5 class="text-white mb-0">Socket.io Events</h5>
+            </div>
+            <p class="text-secondary small" data-i18n="wsDesc">Các sự kiện Realtime được hỗ trợ qua giao thức Socket.io Client:</p>
+            <ul class="text-secondary small mb-0 ps-3">
+              <li class="mb-1"><code class="text-info">run_code</code> (Emit): Gửi chuỗi nguồn mã Python sang máy chủ.</li>
+              <li class="mb-1"><code class="text-info">input_data</code> (Emit): Truyền dữ liệu nhập luồng tiêu chuẩn (stdin).</li>
+              <li class="mb-1"><code class="text-info">output</code> (On): Lắng nghe kết quả thực thi (stdout / stderr).</li>
+              <li><code class="text-info">process_exit</code> (On): Nhận thông báo khi tiến trình chạy hoàn tất.</li>
             </ul>
           </div>
         </div>
+      </div>
 
-        <div class="col-lg-12">
-          <div class="card p-4">
-            <h5 class="text-white"><i class="fa-solid fa-code text-warning me-2"></i>Code tích hợp vào trang web của An</h5>
-            <pre>
+      <!-- KHUYẾN NGHỊ THIẾT KẾ GIAO DIỆN (RECOMMENDED UI) -->
+      <div class="card p-4 mb-4">
+        <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
+          <i class="fa-solid fa-wand-magic-sparkles text-warning me-2"></i>
+          <span data-i18n="uiRecTitle">Khuyến nghị Thiết kế Giao diện Người dùng (Recommended Action Controls)</span>
+        </h5>
+        <p class="text-secondary small mb-3" data-i18n="uiRecDesc">Để tối ưu hóa trải nghiệm tương tác với AlPytide API, hệ thống khuyến nghị tích hợp bộ công cụ nút thao tác dạng Biểu tượng (Icon) đồng bộ trên Client UI:</p>
+
+        <div class="row g-2 text-white">
+          <div class="col-6 col-md-3">
+            <div class="recommend-icon-box">
+              <i class="fa-solid fa-play text-primary"></i>
+              <div class="fw-bold small" data-i18n="btnRun">Nút Chạy (Run)</div>
+              <div class="text-secondary text-xs" style="font-size: 11px;">Thực thi mã nguồn</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="recommend-icon-box">
+              <i class="fa-regular fa-copy"></i>
+              <div class="fw-bold small" data-i18n="btnCopy">Nút Sao chép</div>
+              <div class="text-secondary text-xs" style="font-size: 11px;">Sao chép mã đã chọn/tất cả</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="recommend-icon-box">
+              <i class="fa-solid fa-terminal"></i>
+              <div class="fw-bold small" data-i18n="btnCopyLog">Nút Sao chép Log</div>
+              <div class="text-secondary text-xs" style="font-size: 11px;">Trích xuất lịch sử Output</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="recommend-icon-box">
+              <i class="fa-solid fa-paste"></i>
+              <div class="fw-bold small" data-i18n="btnPaste">Nút Dán (Paste)</div>
+              <div class="text-secondary text-xs" style="font-size: 11px;">Dán mã từ Clipboard</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="recommend-icon-box">
+              <i class="fa-solid fa-object-ungroup"></i>
+              <div class="fw-bold small" data-i18n="btnSelectAll">Nút Bôi Tất Cả</div>
+              <div class="text-secondary text-xs" style="font-size: 11px;">Khoanh vùng toàn bộ mã</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="recommend-icon-box">
+              <i class="fa-solid fa-scissors"></i>
+              <div class="fw-bold small" data-i18n="btnCut">Nút Cắt (Cut)</div>
+              <div class="text-secondary text-xs" style="font-size: 11px;">Cắt vùng mã được chọn</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="recommend-icon-box">
+              <i class="fa-solid fa-trash-can text-danger"></i>
+              <div class="fw-bold small" data-i18n="btnClearCode">Nút Xóa Code</div>
+              <div class="text-secondary text-xs" style="font-size: 11px;">Xóa sạch nội dung Editor</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="recommend-icon-box">
+              <i class="fa-solid fa-broom"></i>
+              <div class="fw-bold small" data-i18n="btnClearOutput">Nút Xóa Output</div>
+              <div class="text-secondary text-xs" style="font-size: 11px;">Làm sạch bảng console</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HƯỚNG DẪN TÍCH HỢP CODE -->
+      <div class="card p-4">
+        <h5 class="text-white fw-bold mb-3 d-flex align-items-center">
+          <i class="fa-solid fa-code text-warning me-2"></i>
+          <span data-i18n="integrationTitle">Tích hợp vào Ứng dụng Client (JavaScript)</span>
+        </h5>
+        <pre>
 &lt;script src="https://cdn.socket.io/4.7.2/socket.io.min.js"&gt;&lt;/script&gt;
 &lt;script&gt;
-  // Kết nối tới Server AlPytide trên Render
+  // Khởi tạo kết nối đến Server Engine AlPytide
   const socket = io('https://alpytide.onrender.com');
 
-  // 1. Gửi code Python cần chạy
-  socket.emit('run_code', 'print("Hello từ AlPytide Engine!")');
+  // 1. Thực thi đoạn mã Python
+  socket.emit('run_code', 'print("Engine AlPytide ready.")');
 
-  // 2. Nhận kết quả Realtime
+  // 2. Nhận luồng dữ liệu trả về
   socket.on('output', (res) => {
     if (res.type === 'stdout') {
       console.log('Output:', res.data);
@@ -156,13 +293,11 @@
     }
   });
 
-  // 3. Lắng nghe khi chương trình kết thúc
+  // 3. Theo dõi sự kiện hoàn tất tiến trình
   socket.on('process_exit', (data) => {
-    console.log('Chương trình hoàn tất với mã:', data.code);
+    console.log('Tiến trình hoàn tất với Mã Exit:', data.code);
   });
 &lt;/script&gt;</pre>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -172,19 +307,21 @@
         <div class="col-md-6">
           <div class="card p-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="fw-bold text-white">main.py</span>
-              <button class="btn btn-sm btn-primary fw-bold" id="runBtn" onclick="runSandboxCode()"><i class="fa-solid fa-play me-1"></i>Chạy ngay</button>
+              <span class="fw-bold text-white fs-6"><i class="fa-regular fa-file-code me-2 text-primary"></i>main.py</span>
+              <button class="btn btn-sm btn-primary fw-bold px-3" id="runBtn" onclick="runSandboxCode()">
+                <i class="fa-solid fa-play me-1"></i><span data-i18n="btnRunText">Chạy Code</span>
+              </button>
             </div>
             <textarea id="sandboxEditor"></textarea>
           </div>
         </div>
         <div class="col-md-6">
           <div class="card p-3">
-            <span class="fw-bold text-white mb-2">Console Output</span>
+            <span class="fw-bold text-white mb-2 fs-6"><i class="fa-solid fa-terminal me-2 text-success"></i>Console Output</span>
             <div id="console"></div>
             <div class="input-group mt-2">
-              <input type="text" id="consoleInput" class="form-control bg-dark text-white border-secondary" placeholder="Nhập giá trị (stdin)...">
-              <button class="btn btn-success fw-bold" onclick="sendSandboxInput()">Gửi</button>
+              <input type="text" id="consoleInput" class="form-control bg-dark text-white border-secondary" placeholder="Nhập giá trị dữ liệu đầu vào (stdin)...">
+              <button class="btn btn-success fw-bold" onclick="sendSandboxInput()" data-i18n="btnSendText">Gửi</button>
             </div>
           </div>
         </div>
@@ -192,14 +329,74 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
 
   <script>
-    // Khởi tạo kết nối tới Render Backend
     const SERVER_URL = 'https://alpytide.onrender.com';
     const socket = io(SERVER_URL);
     let editor;
+
+    // TỪ ĐỂN ĐA NGÔN NGỮ (I18N)
+    const translations = {
+      vi: {
+        tabDocs: "Tài liệu API",
+        tabSandbox: "Sandbox (Thử nghiệm)",
+        introTitle: "Giới thiệu Hệ thống Engine AlPytide API",
+        introDesc: "AlPytide API là nền tảng điện toán đám mây cung cấp dịch vụ thực thi Python Realtime kết nối bằng WebSockets. Dịch vụ hỗ trợ nhúng dễ dàng vào mọi loại ứng dụng Web (Single Page Application, GitHub Pages, Vercel...).",
+        endpointLabel: "Endpoint chính thức:",
+        statusDesc: "Trích xuất thông số trạng thái hoạt động của hệ thống Engine.",
+        responseLabel: "Cấu trúc dữ liệu trả về:",
+        wsDesc: "Các sự kiện Realtime được hỗ trợ qua giao thức Socket.io Client:",
+        uiRecTitle: "Khuyến nghị Thiết kế Giao diện Người dùng (Recommended Action Controls)",
+        uiRecDesc: "Để tối ưu hóa trải nghiệm tương tác với AlPytide API, hệ thống khuyến nghị tích hợp bộ công cụ nút thao tác dạng Biểu tượng (Icon) đồng bộ trên Client UI:",
+        btnRun: "Nút Chạy (Run)",
+        btnCopy: "Nút Sao chép",
+        btnCopyLog: "Nút Sao chép Log",
+        btnPaste: "Nút Dán (Paste)",
+        btnSelectAll: "Nút Bôi Tất Cả",
+        btnCut: "Nút Cắt (Cut)",
+        btnClearCode: "Nút Xóa Code",
+        btnClearOutput: "Nút Xóa Output",
+        integrationTitle: "Tích hợp vào Ứng dụng Client (JavaScript)",
+        btnRunText: "Chạy Code",
+        btnSendText: "Gửi"
+      },
+      en: {
+        tabDocs: "API Documentation",
+        tabSandbox: "Sandbox Testing",
+        introTitle: "AlPytide API Engine Overview",
+        introDesc: "AlPytide API is a cloud-based real-time Python execution engine powered by WebSockets. It enables seamless integration into any web application (Single Page Applications, GitHub Pages, Vercel, etc.).",
+        endpointLabel: "Official Endpoint:",
+        statusDesc: "Retrieve real-time operational status and engine configuration.",
+        responseLabel: "Sample JSON Response:",
+        wsDesc: "Real-time events supported via Socket.io Client protocol:",
+        uiRecTitle: "Recommended UI Action Controls",
+        uiRecDesc: "To deliver an optimal user experience when interacting with AlPytide API, client applications are encouraged to implement the following standardized icon action buttons:",
+        btnRun: "Run Button",
+        btnCopy: "Copy Button",
+        btnCopyLog: "Copy Log Button",
+        btnPaste: "Paste Button",
+        btnSelectAll: "Select All Button",
+        btnCut: "Cut Button",
+        btnClearCode: "Clear Code Button",
+        btnClearOutput: "Clear Output Button",
+        integrationTitle: "Client Integration Guide (JavaScript)",
+        btnRunText: "Run Code",
+        btnSendText: "Send"
+      }
+    };
+
+    function changeLanguage(lang) {
+      document.getElementById('currentLang').textContent = lang === 'vi' ? 'Tiếng Việt' : 'English';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+    }
 
     window.onload = () => {
       editor = CodeMirror.fromTextArea(document.getElementById('sandboxEditor'), {
@@ -209,12 +406,12 @@
         indentUnit: 4,
         lineWrapping: true
       });
-      editor.setValue('import time\n\nprint("=== ALPYTIDE API ONLINE ===")\nfor i in range(1, 4):\n    print(f"Đang đếm: {i}")\n    time.sleep(0.5)\n\nname = input("Nhập tên của bạn: ")\nprint(f"Xin chào {name} từ Server Render!")');
+      editor.setValue('import time\n\nprint("=== ALPYTIDE API ONLINE ===")\nfor i in range(1, 4):\n    print(f"Đang đếm: {i}")\n    time.sleep(0.3)\n\nval = input("Nhập dữ liệu bất kỳ: ")\nprint(f"Kết quả nhận được: {val}")');
     };
 
     function switchTab(tab, event) {
       document.querySelectorAll('#docTabs .nav-link').forEach(el => el.classList.remove('active'));
-      event.target.classList.add('active');
+      event.target.closest('.nav-link').classList.add('active');
 
       if (tab === 'docs') {
         document.getElementById('tab-docs').style.display = 'block';
@@ -229,7 +426,7 @@
     socket.on('output', (res) => {
       const consoleEl = document.getElementById('console');
       const span = document.createElement('span');
-      span.style.color = res.type === 'stderr' ? '#ff6b6b' : '#7ee787';
+      span.style.color = res.type === 'stderr' ? '#ff6b6b' : '#3fb950';
       span.textContent = res.data;
       consoleEl.appendChild(span);
       consoleEl.scrollTop = consoleEl.scrollHeight;
@@ -237,7 +434,7 @@
 
     socket.on('process_exit', (res) => {
       const consoleEl = document.getElementById('console');
-      consoleEl.innerHTML += `<div style="color: #8b949e; font-style: italic;">\n[Tiến trình kết thúc với mã exit: ${res.code}]</div>`;
+      consoleEl.innerHTML += `<div style="color: #8b949e; font-style: italic;">\n[Tiến trình hoàn tất với exit code: ${res.code}]</div>`;
       document.getElementById('runBtn').disabled = false;
     });
 
