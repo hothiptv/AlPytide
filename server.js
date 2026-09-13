@@ -57,7 +57,7 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// ROUTE GIAO DIỆN CHÍNH (Full IDE Python với CodeMirror, Tô màu, Số dòng không lệch, Tự động Indent)
+// ROUTE GIAO DIỆN CHÍNH (Tối ưu ngắt dòng Soft-Wrap như Programiz)
 app.get('/', (req, res) => {
   res.send(`
 <!DOCTYPE html>
@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- CodeMirror 5 (IDE Code Editor Chuyên Nghiệp) -->
+  <!-- CodeMirror 5 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
@@ -107,13 +107,17 @@ app.get('/', (req, res) => {
       border-radius: 8px;
       padding: 15px;
     }
-    /* Đảm bảo khung CodeMirror thẳng hàng, số dòng không bị lệch */
     .CodeMirror {
       height: 400px;
       border-radius: 6px;
       font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
       font-size: 14px;
       line-height: 1.5;
+    }
+    /* Sửa lỗi tràn màn hình: Tự động xuống dòng chuẩn như Programiz */
+    .CodeMirror-wrap pre.CodeMirror-line, 
+    .CodeMirror-wrap pre.CodeMirror-line-like {
+      word-break: break-word;
     }
     .CodeMirror-gutters {
       background-color: #282a36;
@@ -230,16 +234,18 @@ app.get('/', (req, res) => {
     let resetTime = null;
     let timerInterval = null;
 
-    // Khởi tạo CodeMirror IDE
+    // Khởi tạo CodeMirror IDE đã khắc phục lỗi tự động lùi tab & tràn lề
     window.onload = () => {
       editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
         mode: 'python',
         theme: 'dracula',
-        lineNumbers: true, // Cột số dòng chính xác
-        indentUnit: 4, // Tự động thụt lề 1 tab = 4 khoảng trắng
+        lineNumbers: true,
+        lineWrapping: true,        // Tự động xuống dòng khi câu lệnh vượt màn hình
+        indentUnit: 4,
         tabSize: 4,
         indentWithTabs: false,
-        smartIndent: true, // Tự động nhảy lề khi xuống dòng sau dấu ":"
+        smartIndent: false,        // Tắt tự động lùi tab nhầm khi bấm Enter ở dòng thường
+        electricChars: false,
         matchBrackets: true,
         autoCloseBrackets: true
       });
@@ -249,24 +255,12 @@ app.get('/', (req, res) => {
       if (savedCode) {
         editor.setValue(savedCode);
       } else {
-        editor.setValue(\`# Hỗ trợ đầy đủ thư viện: numpy, pandas, matplotlib, requests,...
-import numpy as np
-import matplotlib.pyplot as plt
+        editor.setValue(\`# Mã Python mẫu với AlPytide Engine
+import time
 
-print("Chào mừng bạn đến với AlPytide Python IDE v1.2!")
-
-# Tự động nhảy lề khi xuống dòng sau cấu trúc điều kiện/vòng lặp:
+print("Hello AlPytide Sandbox!")
 for i in range(1, 4):
-    print(f"-> Đang xử lý bước {i}...")
-
-# Thử nghiệm tạo biểu đồ Matplotlib
-x = np.linspace(0, 10, 100)
-y = np.sin(x)
-plt.plot(x, y, label='Sóng Sin')
-plt.title('Biểu đồ thử nghiệm')
-plt.grid(True)
-plt.savefig('chart.png')
-print("Đã xuất biểu đồ chart.png thành công!")\`);
+    print(f"-> Đang thực thi bước {i}...")\`);
       }
 
       // Kiểm tra và tự động cảnh báo dòng/cú pháp
@@ -279,7 +273,6 @@ print("Đã xuất biểu đồ chart.png thành công!")\`);
       initSocket();
     };
 
-    // Kiểm tra và hiển thị cảnh báo
     function checkCodeWarnings(code) {
       const banner = document.getElementById('warningBanner');
       const msg = document.getElementById('warningMsg');
@@ -290,7 +283,7 @@ print("Đã xuất biểu đồ chart.png thành công!")\`);
         if (line.trim().endsWith(':') && i + 1 < lines.length) {
           const nextLine = lines[i + 1];
           if (nextLine.trim() !== '' && !nextLine.startsWith(' ') && !nextLine.startsWith('\\t')) {
-            msg.innerText = \`Cảnh báo dòng \${i + 2}: Thiếu thụt lề (IndentationError) sau câu lệnh khối ở dòng \${i + 1}.\`;
+            msg.innerText = \`Cảnh báo dòng \${i + 2}: Thiếu thụt lề (IndentationError) sau câu lệnh ở dòng \${i + 1}.\`;
             banner.style.display = 'block';
             return;
           }
@@ -445,14 +438,13 @@ io.on('connection', (socket) => {
   const limitInfo = userLimits.get(userIp);
   const now = Date.now();
 
-  // Kiểm tra xem đã hết thời gian đếm ngược (cooldown) để reset lại lượt chưa
+  // Kiểm tra thời gian cooldown reset lượt
   if (limitInfo.resetTime && now >= limitInfo.resetTime) {
     limitInfo.runsLeft = MAX_RUNS;
     limitInfo.resetTime = null;
     saveUserLimits(userLimits);
   }
 
-  // Gửi trạng thái lượt chạy ban đầu ngay khi client kết nối
   socket.emit('rate_update', { 
     runsLeft: limitInfo.runsLeft, 
     resetTime: limitInfo.resetTime,
@@ -469,13 +461,11 @@ io.on('connection', (socket) => {
     const currentLimit = userLimits.get(userIp) || { runsLeft: MAX_RUNS, resetTime: null };
     const currentTime = Date.now();
 
-    // Kiểm tra reset thời gian 3 phút
     if (currentLimit.resetTime && currentTime >= currentLimit.resetTime) {
       currentLimit.runsLeft = MAX_RUNS;
       currentLimit.resetTime = null;
     }
 
-    // Kiểm tra nếu hết lượt
     if (currentLimit.runsLeft <= 0) {
       const remainingSeconds = Math.ceil((currentLimit.resetTime - currentTime) / 1000);
       socket.emit('output', { 
@@ -487,13 +477,11 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Trừ lượt dùng và cập nhật thời gian reset
     currentLimit.runsLeft--;
     if (currentLimit.runsLeft === 0 && !currentLimit.resetTime) {
       currentLimit.resetTime = currentTime + COOLDOWN_TIME;
     }
 
-    // Lưu vào file local và phản hồi cho client
     userLimits.set(userIp, currentLimit);
     saveUserLimits(userLimits);
 
@@ -503,17 +491,14 @@ io.on('connection', (socket) => {
       maxRuns: MAX_RUNS
     });
 
-    // Nếu đang có tiến trình cũ chưa xong thì kill
     if (processes.has(socket.id)) {
       clearTimeout(processes.get(socket.id).timer);
       clearTimeout(processes.get(socket.id).killTimer);
       processes.get(socket.id).proc.kill();
     }
 
-    // Nhận dữ liệu code và files phụ từ client
     const { mainCode, files } = typeof data === 'string' ? { mainCode: data, files: [] } : data;
 
-    // Ghi các file đính kèm
     if (Array.isArray(files)) {
       files.forEach(file => {
         if (file.name && file.content !== undefined) {
@@ -523,15 +508,12 @@ io.on('connection', (socket) => {
       });
     }
 
-    // Ghi file main.py
     const mainFilePath = path.join(sessionDir, 'main.py');
     let formattedCode = (mainCode || '').replace(/\r\n/g, '\n').replace(/\t/g, '    ');
     fs.writeFileSync(mainFilePath, formattedCode, 'utf-8');
 
-    // Thực thi Python (Tự động nhận toàn bộ thư viện đã cài trên máy/container)
     const pythonProcess = spawn('python3', ['-u', 'main.py'], { cwd: sessionDir });
 
-    // Timer cảnh báo Timeout 1 phút (60 giây) theo tài liệu v1.2
     const timer = setTimeout(() => {
       socket.emit('output', { 
         type: 'stderr', 
@@ -539,7 +521,6 @@ io.on('connection', (socket) => {
       });
     }, EXECUTION_TIMEOUT);
 
-    // Timer ngắt cứng hoàn toàn tiến trình ở mốc 10 phút (600 giây)
     const killTimer = setTimeout(() => {
       if (processes.has(socket.id)) {
         pythonProcess.kill();
@@ -569,7 +550,6 @@ io.on('connection', (socket) => {
         processes.delete(socket.id);
       }
 
-      // Xuất file text, JSON & Biểu đồ Matplotlib (.png, .jpg)
       try {
         const createdFiles = fs.readdirSync(sessionDir);
         const outputFiles = [];
