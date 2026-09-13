@@ -10,9 +10,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// API kiểm tra trạng thái Server
-app.get('/', (req, res) => {
-  res.send({ status: 'AlPytide Server is running!' });
+// Phục vụ các file tĩnh (bao gồm index.html) trong thư mục gốc
+app.use(express.static(__dirname));
+
+// Trả về file index.html khi truy cập đường dẫn gốc hoặc /index
+app.get(['/', '/index', '/index.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // API thực thi Python
@@ -23,7 +26,6 @@ app.post('/api/run', (req, res) => {
     return res.status(400).json({ output: 'Lỗi: Không tìm thấy mã Python!' });
   }
 
-  // Tạo file tạm temp_code.py
   const filePath = path.join(__dirname, 'temp_code.py');
 
   fs.writeFile(filePath, code, (err) => {
@@ -31,9 +33,7 @@ app.post('/api/run', (req, res) => {
       return res.status(500).json({ output: `Lỗi ghi file server: ${err.message}` });
     }
 
-    // Thực thi Python với thời gian chờ tối đa 10 giây (tránh vòng lặp vô tận)
     exec(`python3 "${filePath}"`, { timeout: 10000 }, (error, stdout, stderr) => {
-      // Dọn dẹp file tạm sau khi chạy
       fs.unlink(filePath, () => {});
 
       if (error && error.killed) {
