@@ -61,7 +61,6 @@
 
   <div class="brand-title text-center mb-1">ALPYTIDE STUDIO (PYTHON ENGINE)</div>
 
-  <!-- Topbar -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <ul class="nav nav-tabs border-0" id="ideTabs">
       <li class="nav-item">
@@ -78,14 +77,16 @@
       <div class="dropdown">
         <button class="btn btn-outline-secondary btn-sm" type="button" id="menuBtn" data-bs-toggle="dropdown" aria-expanded="false">☰</button>
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-          <li><a class="dropdown-item" href="javascript:void(0)" onclick="copyCode()">Sao chép Edit Code</a></li>
-          <li><a class="dropdown-item" href="javascript:void(0)" onclick="copyLog()">Sao chép Console Log</a></li>
+          <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="clearCode()">🗑️ Xóa tất cả code</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" onclick="clearOutput()">🧹 Xóa màn hình Output</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" onclick="copyCode()">📋 Sao chép Edit Code</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" onclick="copyLog()">📋 Sao chép Console Log</a></li>
         </ul>
       </div>
     </div>
   </div>
 
-  <!-- Main Content -->
   <div class="tab-content" id="ideTabContent">
     <div class="tab-pane fade show active" id="edit-pane">
       <textarea id="codeEditor"></textarea>
@@ -104,10 +105,8 @@
   <script>
     const SERVER_URL = window.location.origin + '/api/run';
 
-    // Mã mẫu test thử gọi API mạng ngoài
-    const defaultCode = `import requests\nimport time\n\nprint("=== ĐANG TEST KẾT NỐI MẠNG ===")\nres = requests.get('https://api.github.com')\nprint("Trạng thái kết nối API:", res.status_code)\nprint("Thời gian Server:", time.strftime("%H:%M:%S"))`;
-
-    const initialCode = localStorage.getItem('alpytide_py_code') || defaultCode;
+    const defaultCode = `import time\n\nprint("=== ALPYTIDE PYTHON STUDIO ===")\nprint("Thời gian hiện tại:", time.strftime("%H:%M:%S"))`;
+    const initialCode = localStorage.getItem('alpytide_py_code') !== null ? localStorage.getItem('alpytide_py_code') : defaultCode;
 
     const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
       mode: 'python',
@@ -120,12 +119,10 @@
 
     editor.setValue(initialCode);
 
-    // Tự động lưu mã vào máy người dùng
     editor.on('change', () => {
       localStorage.setItem('alpytide_py_code', editor.getValue());
     });
 
-    // Chuyển Tab cực mượt
     function switchTab(tabName) {
       const editTab = document.getElementById('edit-tab');
       const outputTab = document.getElementById('output-tab');
@@ -146,23 +143,19 @@
       }
     }
 
-    // Chạy code Python
     async function runPythonCode() {
       const code = editor.getValue();
       const consoleOutput = document.getElementById('consoleOutput');
       const runBtn = document.getElementById('runBtn');
 
-      // 1. Xóa sạch Output cũ
       consoleOutput.textContent = "";
-
       runBtn.disabled = true;
       runBtn.innerText = '⏳ Running...';
 
-      // 2. Chuyển sang Tab Output ngay
       switchTab('output');
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 giây timeout cho client
+      const timeoutId = setTimeout(() => controller.abort(), 16000);
 
       try {
         const response = await fetch(SERVER_URL, {
@@ -177,7 +170,7 @@
         consoleOutput.textContent = data.output;
       } catch (err) {
         if (err.name === 'AbortError') {
-          consoleOutput.textContent = "> Lỗi: Server xử lý quá lâu (Timeout 12s)!";
+          consoleOutput.textContent = "> Lỗi: Server phản hồi quá lâu (Timeout)!";
         } else {
           consoleOutput.textContent = "> Lỗi kết nối Server: " + err.message;
         }
@@ -187,9 +180,22 @@
       }
     }
 
+    // Hàm xóa tất cả code
+    function clearCode() {
+      if (confirm("Bạn có chắc chắn muốn xóa toàn bộ code trong trình biên soạn?")) {
+        editor.setValue("");
+        localStorage.removeItem('alpytide_py_code');
+      }
+    }
+
+    // Hàm xóa log output
+    function clearOutput() {
+      document.getElementById('consoleOutput').textContent = "> Đang chờ thực thi...";
+    }
+
     function copyCode() {
       navigator.clipboard.writeText(editor.getValue());
-      alert("Đã sao chép code Python!");
+      alert("Đã sao chép mã Python!");
     }
 
     function copyLog() {
