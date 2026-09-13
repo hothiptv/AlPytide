@@ -100,7 +100,7 @@
       white-space: pre-wrap;
       word-break: break-all;
       min-height: 0;
-      padding-bottom: 60px; /* Chừa khoảng trống để không bị thanh input che mất dòng cuối */
+      padding-bottom: 70px; /* Đảm bảo không bị thanh input che mất dòng cuối */
     }
 
     /* Thanh Input bám đáy trong khung */
@@ -226,7 +226,7 @@
         <!-- Thanh Input bám đáy trong khung -->
         <div class="floating-input-bar" id="floatingInputBar">
           <span id="inputPromptLabel" style="font-size: 12px; color: #58a6ff; white-space: nowrap;">Nhập:</span>
-          <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" placeholder="Nhập giá trị và nhấn Gửi...">
+          <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" placeholder="Chạm vào đây để nhập...">
           <button class="btn btn-sm btn-success fw-bold px-3" onclick="sendInput()" style="height: 30px; font-size: 12px;">Gửi</button>
         </div>
       </div>
@@ -268,8 +268,10 @@
       const color = res.type === 'stderr' ? '#ff6b6b' : '#3fb950';
       appendOutput(res.data, color);
       
-      // Chỉ kích hoạt thanh nhập liệu khi dòng output thực sự là câu lệnh input (kết thúc bằng dấu : hoặc ?)
-      checkAndShowInputBar(res.data);
+      // Bắt mọi dòng output có chứa dấu : hoặc ? để hiện thanh input
+      if (res.data.includes(":") || res.data.includes("?")) {
+        showInputBar(res.data.trim());
+      }
     });
 
     socket.on('process_exit', (data) => {
@@ -308,14 +310,6 @@
       scrollToBottom();
     }
 
-    function checkAndShowInputBar(text) {
-      const trimmed = text.trimEnd();
-      // Chỉ bắt các chuỗi thực sự kết thúc bằng dấu hỏi chấm hoặc dấu hai chấm của lệnh input
-      if ((trimmed.endsWith(":") || trimmed.endsWith("?")) && text.length < 80) {
-        showInputBar(trimmed);
-      }
-    }
-
     function showInputBar(promptText) {
       const bar = document.getElementById('floatingInputBar');
       const inputEl = document.getElementById('terminalInput');
@@ -324,9 +318,13 @@
       label.textContent = promptText || "Nhập:";
       bar.style.display = 'flex';
       inputEl.value = "";
-      inputEl.focus();
       scrollToBottom();
     }
+
+    // Lắng nghe sự kiện chạm vào toàn bộ thanh input bar để iOS Safari kích hoạt bàn phím lập tức
+    document.getElementById('floatingInputBar').addEventListener('click', function() {
+      document.getElementById('terminalInput').focus();
+    });
 
     function hideInputBar() {
       document.getElementById('floatingInputBar').style.display = 'none';
