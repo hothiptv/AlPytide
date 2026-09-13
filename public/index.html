@@ -240,7 +240,7 @@
     });
 
     socket.on('connect', () => {
-      document.getElementById('terminalTextTpl'] = "> Đã kết nối Server thành công!\n";
+      document.getElementById('terminalText').innerText = "> Đã kết nối Server thành công!\n";
     });
 
     socket.on('output', (res) => {
@@ -248,8 +248,7 @@
       const color = res.type === 'stderr' ? '#ff6b6b' : '#3fb950';
       appendOutput(res.data, color);
 
-      // Kiểm tra nếu chương trình đang đợi input (dựa vào ký hiệu hoặc nội dung in ra kết thúc bằng dấu hỏi/khoảng trắng)
-      // Tại đây server sẽ nhận input realtime từ thanh nổi phía dưới
+      // Tự động bật thanh input nổi khi chương trình yêu cầu nhập liệu
       checkAndShowInputBar(res.data);
     });
 
@@ -290,7 +289,6 @@
     }
 
     function checkAndShowInputBar(text) {
-      // Khi python in ra prompt của input (thường kết thúc bằng dấu : hoặc ? hoặc khoảng trắng)
       if (text.includes(":") || text.includes("?") || text.endsWith(" ")) {
         showInputBar(text.trim());
       }
@@ -320,7 +318,6 @@
       socket.emit('input_data', val);
     }
 
-    // Bắt sự kiện nhấn Enter trên bàn phím điện thoại để gửi luôn
     document.getElementById('terminalInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         sendInput();
