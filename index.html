@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AlPytide IDE - Luau/Lua</title>
+  <title>AlPytide IDE - Lua Engine</title>
   
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -51,6 +51,7 @@
       border: none;
       padding: 6px 12px;
       font-weight: 500;
+      cursor: pointer;
     }
     .nav-tabs .nav-link.active {
       background-color: #21262d;
@@ -65,12 +66,12 @@
 
   <!-- Topbar -->
   <div class="d-flex justify-content-between align-items-center mb-2">
-    <ul class="nav nav-tabs border-0" id="ideTabs" role="tablist">
+    <ul class="nav nav-tabs border-0" id="ideTabs">
       <li class="nav-item">
-        <button class="nav-link active" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit-pane" type="button" role="tab">main.lua</button>
+        <button class="nav-link active" id="edit-tab" onclick="switchTab('edit')">main.lua</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link" id="output-tab" data-bs-toggle="tab" data-bs-target="#output-pane" type="button" role="tab">Output</button>
+        <button class="nav-link" id="output-tab" onclick="switchTab('output')">Output</button>
       </li>
     </ul>
 
@@ -89,11 +90,11 @@
 
   <!-- Content -->
   <div class="tab-content" id="ideTabContent">
-    <div class="tab-pane fade show active" id="edit-pane" role="tabpanel">
+    <div class="tab-pane fade show active" id="edit-pane">
       <textarea id="codeEditor"></textarea>
     </div>
 
-    <div class="tab-pane fade" id="output-pane" role="tabpanel">
+    <div class="tab-pane fade" id="output-pane">
       <div class="console-output" id="consoleOutput">> Đang chờ thực thi...</div>
     </div>
   </div>
@@ -101,18 +102,16 @@
   <!-- JS Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-  <!-- Chế độ tô màu cú pháp Lua -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/lua/lua.min.js"></script>
-  <!-- Addon tự đóng mở ngoặc -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
 
   <script>
     const SERVER_URL = window.location.origin + '/api/run';
 
-    // Đọc mã lưu từ LocalStorage (key: alpytide_lua_code)
+    // Đọc mã lưu từ LocalStorage
     const initialCode = localStorage.getItem('alpytide_lua_code') || `-- AlPytide IDE Lua Engine\nlocal function greet(name)\n    print("Xin chào " .. name .. " từ AlPytide Server!")\nend\n\ngreet("Trọng An")`;
 
-    // Cấu hình CodeMirror chuẩn cho Lua
+    // Cấu hình CodeMirror
     const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
       mode: 'lua',
       theme: 'dracula',
@@ -124,40 +123,68 @@
 
     editor.setValue(initialCode);
 
-    // Lưu mã liên tục vào localStorage khi gõ
+    // Lưu mã liên tục khi gõ
     editor.on('change', () => {
-      localStorage.getItem = localStorage.setItem('alpytide_lua_code', editor.getValue());
+      localStorage.setItem('alpytide_lua_code', editor.getValue());
     });
 
-    // Thực thi mã Lua
+    // Hàm chuyển Tab thủ công (Khắc phục triệt để lỗi không chuyển được tab)
+    function switchTab(tabName) {
+      const editTab = document.getElementById('edit-tab');
+      const outputTab = document.getElementById('output-tab');
+      const editPane = document.getElementById('edit-pane');
+      const outputPane = document.getElementById('output-pane');
+
+      if (tabName === 'edit') {
+        editTab.classList.add('active');
+        outputTab.classList.remove('active');
+        editPane.classList.add('show', 'active');
+        outputPane.classList.remove('show', 'active');
+        setTimeout(() => editor.refresh(), 50); // Refresh lại CodeMirror khi quay về tab edit
+      } else {
+        outputTab.classList.add('active');
+        editTab.classList.remove('active');
+        outputPane.classList.add('show', 'active');
+        editPane.classList.remove('show', 'active');
+      }
+    }
+
+    // Thực thi mã Lua với AbortController (Tránh bị ngâm / lag quá lâu)
     async function runLuaCode() {
       const code = editor.getValue();
       const consoleOutput = document.getElementById('consoleOutput');
       const runBtn = document.getElementById('runBtn');
 
-      // 1. XÓA SẠCH OUTPUT CŨ trước khi in log mới
+      // 1. Xóa toàn bộ output cũ trước khi in mới
       consoleOutput.textContent = "";
 
       runBtn.disabled = true;
       runBtn.innerText = '⏳ Running...';
 
-      // 2. Tự động chuyển tab sang Output
-      const outputTabBtn = document.getElementById('output-tab');
-      const tab = new bootstrap.Tab(outputTabBtn);
-      tab.show();
+      // 2. Chuyển sang Tab Output ngay lập tức
+      switchTab('output');
+
+      // Thiết lập giới hạn thời gian phản hồi ở Client là 6 giây
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
       try {
         const response = await fetch(SERVER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code })
+          body: JSON.stringify({ code }),
+          signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
         const data = await response.json();
-        // Hiển thị Output mới hoàn toàn
         consoleOutput.textContent = data.output;
       } catch (err) {
-        consoleOutput.textContent = "> Lỗi kết nối Server: " + err.message;
+        if (err.name === 'AbortError') {
+          consoleOutput.textContent = "> Lỗi: Server phản hồi quá lâu (Quá thời hạn 6 giây)!";
+        } else {
+          consoleOutput.textContent = "> Lỗi kết nối Server: " + err.message;
+        }
       } finally {
         runBtn.disabled = false;
         runBtn.innerText = '▶ Run';
