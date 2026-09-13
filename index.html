@@ -2,7 +2,6 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <!-- Cấu hình chống zoom màn hình di động -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AlPytide IDE</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -23,7 +22,7 @@
     }
     .editor-container {
       display: flex;
-      height: calc(100vh - 120px);
+      height: calc(100vh - 110px);
       border: 1px solid #333;
       border-radius: 4px;
       background: #1e1e1e;
@@ -56,7 +55,7 @@
       word-wrap: break-word;
     }
     .console-output {
-      height: calc(100vh - 120px);
+      height: calc(100vh - 110px);
       background-color: #000;
       color: #00ff66;
       padding: 15px;
@@ -81,10 +80,8 @@
 </head>
 <body class="p-2">
 
-  <!-- Hãng nhỏ ở trên -->
   <div class="brand-title text-center">AlPytide Studio</div>
 
-  <!-- Thanh công cụ Topbar -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <ul class="nav nav-tabs border-0" id="ideTabs" role="tablist">
       <li class="nav-item">
@@ -96,26 +93,21 @@
     </ul>
 
     <div class="d-flex align-items-center gap-1">
-      <!-- Nút Run -->
       <button class="btn btn-success btn-sm px-3 fw-bold" onclick="runPythonCode()">▶ Run</button>
 
-      <!-- Menu 3 gạch -->
       <div class="dropdown">
         <button class="btn btn-secondary btn-sm" type="button" data-bs-toggle="dropdown">
           ☰
         </button>
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-          <li><a class="dropdown-link dropdown-item" href="#" onclick="copyCode()">Sao chép Edit Code</a></li>
-          <li><a class="dropdown-link dropdown-item" href="#" onclick="copyLog()">Sao chép Console Log</a></li>
+          <li><a class="dropdown-item" href="#" onclick="copyCode()">Sao chép Edit Code</a></li>
+          <li><a class="dropdown-item" href="#" onclick="copyLog()">Sao chép Console Log</a></li>
         </ul>
       </div>
     </div>
   </div>
 
-  <!-- Nội dung các Tab -->
   <div class="tab-content" id="ideTabContent">
-    
-    <!-- Tab EDIT (main.py) -->
     <div class="tab-pane fade show active" id="edit-pane" role="tabpanel">
       <div class="editor-container">
         <div class="line-numbers" id="lineNumbers">1</div>
@@ -123,30 +115,27 @@
       </div>
     </div>
 
-    <!-- Tab OUTPUT (Console) -->
     <div class="tab-pane fade" id="output-pane" role="tabpanel">
       <div class="console-output" id="consoleOutput">> Đang chờ thực thi...</div>
     </div>
-
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
   <script>
-    const SERVER_URL = "https://alpytide.onrender.com/api/run"; // Link API Server Node.js của bạn
+    // Tự động nhận diện host (tránh lỗi lệch domain/protocol)
+    const SERVER_URL = window.location.origin + '/api/run';
 
     const codeEditor = document.getElementById('codeEditor');
     const lineNumbers = document.getElementById('lineNumbers');
     const consoleOutput = document.getElementById('consoleOutput');
 
-    // Khôi phục code từ LocalStorage
     const savedCode = localStorage.getItem('alpytide_code');
     if (savedCode) {
       codeEditor.value = savedCode;
     } else {
-      codeEditor.value = `# Đã cài sẵn các thư viện: requests, firebase-admin, pymongo...\nimport requests\n\nprint("Xin chào từ AlPytide!")`;
+      codeEditor.value = `import requests\n\nprint("Xin chào từ AlPytide IDE!")`;
     }
 
-    // Cập nhật số dòng
     function updateLineNumbers() {
       const lines = codeEditor.value.split('\n').length;
       let lineNumHTML = '';
@@ -156,23 +145,19 @@
       lineNumbers.textContent = lineNumHTML;
     }
 
-    // Sự kiện nhập liệu
     codeEditor.addEventListener('input', () => {
       updateLineNumbers();
       localStorage.setItem('alpytide_code', codeEditor.value);
     });
 
-    // Cuộn đồng bộ số dòng
     codeEditor.addEventListener('scroll', () => {
       lineNumbers.scrollTop = codeEditor.scrollTop;
     });
 
-    // Chạy Code Python
     async function runPythonCode() {
       const code = codeEditor.value;
       consoleOutput.textContent = "> Đang kết nối server và thực thi code...";
 
-      // Tự động chuyển sang tab Output
       const outputTabTrigger = new bootstrap.Tab(document.getElementById('output-tab'));
       outputTabTrigger.show();
 
@@ -190,19 +175,16 @@
       }
     }
 
-    // Sao chép Code
     function copyCode() {
       navigator.clipboard.writeText(codeEditor.value);
-      alert("Đã sao chép mã Python vào bộ nhớ tạm!");
+      alert("Đã sao chép mã Python!");
     }
 
-    // Sao chép Log
     function copyLog() {
       navigator.clipboard.writeText(consoleOutput.textContent);
-      alert("Đã sao chép Console log!");
+      alert("Đã sao chép Console Log!");
     }
 
-    // Khởi tạo ban đầu
     updateLineNumbers();
   </script>
 </body>
