@@ -74,9 +74,15 @@
       font-size: 13px;
       border-radius: 6px;
       border: 1px solid #282c34;
+      transition: border-color 0.3s ease;
     }
 
-    /* Khung Console Output */
+    .CodeMirror-focused {
+      border-color: #58a6ff !important;
+      box-shadow: 0 0 8px rgba(88, 166, 255, 0.2);
+    }
+
+    /* Khung Console Output với hiệu ứng viền sáng nhẹ */
     .console-container {
       flex-grow: 1;
       background-color: #0d1117;
@@ -87,6 +93,12 @@
       min-height: 0;
       position: relative;
       overflow: hidden;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .console-container:focus-within {
+      border-color: #3fb950;
+      box-shadow: 0 0 10px rgba(63, 185, 80, 0.15);
     }
 
     .console-wrapper {
@@ -130,7 +142,7 @@
       transform: translateY(0) scale(1);
     }
 
-    /* Thanh Input bám đáy với hiệu ứng trượt lên */
+    /* Thanh Input bám đáy có hiệu ứng trượt lên */
     .floating-input-bar {
       display: none;
       background-color: #161b22;
@@ -190,7 +202,18 @@
       box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
     }
 
-    /* Spinner Loading */
+    /* Hiệu ứng xung nhịp Neon cho nút Run */
+    @keyframes pulse-glow {
+      0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.6); }
+      70% { box-shadow: 0 0 0 8px rgba(13, 110, 253, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+    }
+
+    #runBtn {
+      animation: pulse-glow 2s infinite;
+    }
+
+    /* Spinner Loading với hiệu ứng chuyển màu mượt */
     .loading-overlay {
       display: none;
       position: absolute;
@@ -203,6 +226,10 @@
       gap: 10px;
       color: #58a6ff;
       z-index: 10;
+      background: rgba(13, 17, 23, 0.85);
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(2px);
     }
 
     .nav-tabs .nav-link {
@@ -228,11 +255,15 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
-      transition: transform 0.1s ease, background-color 0.2s;
+      transition: transform 0.15s ease, background-color 0.2s, filter 0.2s;
     }
 
     .btn-action:active {
-      transform: scale(0.92);
+      transform: scale(0.90);
+    }
+
+    .btn-action:hover {
+      filter: brightness(1.15);
     }
   </style>
 </head>
@@ -271,7 +302,7 @@
 
   <div class="tab-content" id="ideTabContent">
     <div class="tab-pane fade show active" id="edit-pane">
-      <textarea id="codeEditor"></textarea>
+      <textarea id="codeEditor" lang="vi" autocapitalize="none" autocorrect="off" spellcheck="false"></textarea>
     </div>
 
     <div class="tab-pane fade" id="output-pane">
@@ -279,7 +310,7 @@
         <!-- Spinner Loading -->
         <div class="loading-overlay" id="loadingOverlay">
           <div class="spinner-border text-primary" role="status"></div>
-          <span style="font-size: 12px;">Đang kết nối Server & chạy code...</span>
+          <span style="font-size: 12px; font-weight: 500;" id="loadingText">Đang khởi chạy Python Engine...</span>
         </div>
 
         <div class="console-wrapper" id="terminal">
@@ -295,7 +326,7 @@
         <!-- Thanh Input bám đáy có hiệu ứng trượt -->
         <div class="floating-input-bar" id="floatingInputBar">
           <div class="label-container" id="inputPromptLabel" onclick="togglePopup()" title="Chạm để xem đầy đủ">Nhập:</div>
-          <input type="text" id="terminalInput" autocomplete="off" spellcheck="false" placeholder="Nhập giá trị...">
+          <input type="text" id="terminalInput" lang="vi" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="Nhập giá trị...">
           <button class="btn btn-sm btn-success fw-bold px-3" onclick="sendInput()" style="height: 30px; font-size: 12px; flex-shrink: 0;">Gửi</button>
         </div>
       </div>
@@ -320,7 +351,8 @@
       lineNumbers: true,
       lineWrapping: true,
       indentUnit: 4,
-      autoCloseBrackets: true
+      autoCloseBrackets: true,
+      inputStyle: 'textarea' // Giúp bàn phím điện thoại gõ tiếng Việt có dấu ổn định hơn
     });
 
     editor.setValue(initialCode);
@@ -398,7 +430,6 @@
       popup.classList.toggle('show');
     }
 
-    // Chạm vào vùng trống của thanh input bar để gọi bàn phím
     document.getElementById('floatingInputBar').addEventListener('click', function(e) {
       if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && !e.target.classList.contains('label-container')) {
         document.getElementById('terminalInput').focus();
