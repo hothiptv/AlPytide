@@ -46,7 +46,7 @@
     .nav-tabs .nav-link {
       color: #8b949e;
       border: none;
-      padding: 6px 12px;
+      padding: 6px 10px;
       font-weight: 500;
       cursor: pointer;
     }
@@ -55,13 +55,21 @@
       color: #58a6ff;
       border-bottom: 2px solid #58a6ff;
     }
+    /* Style cho các nút Icon */
+    .icon-btn {
+      padding: 4px 8px;
+      font-size: 14px;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
 
   <div class="brand-title text-center mb-1">ALPYTIDE STUDIO (PYTHON ENGINE)</div>
 
+  <!-- Header Bar -->
   <div class="d-flex justify-content-between align-items-center mb-2">
+    <!-- Tabs -->
     <ul class="nav nav-tabs border-0" id="ideTabs">
       <li class="nav-item">
         <button class="nav-link active" id="edit-tab" onclick="switchTab('edit')">main.py</button>
@@ -71,22 +79,17 @@
       </li>
     </ul>
 
+    <!-- Action Icon Buttons -->
     <div class="d-flex align-items-center gap-1">
-      <button class="btn btn-primary btn-sm px-3 fw-bold" id="runBtn" onclick="runPythonCode()">▶ Run</button>
-
-      <div class="dropdown">
-        <button class="btn btn-outline-secondary btn-sm" type="button" id="menuBtn" data-bs-toggle="dropdown" aria-expanded="false">☰</button>
-        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-          <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="clearCode()">🗑️ Xóa tất cả code</a></li>
-          <li><a class="dropdown-item" href="javascript:void(0)" onclick="clearOutput()">🧹 Xóa màn hình Output</a></li>
-          <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item" href="javascript:void(0)" onclick="copyCode()">📋 Sao chép Edit Code</a></li>
-          <li><a class="dropdown-item" href="javascript:void(0)" onclick="copyLog()">📋 Sao chép Console Log</a></li>
-        </ul>
-      </div>
+      <button class="btn btn-primary btn-sm px-2 fw-bold" id="runBtn" onclick="runPythonCode()" title="Chạy code">▶ Run</button>
+      <button class="btn btn-outline-secondary btn-sm icon-btn" onclick="copyCode()" title="Sao chép Edit Code">📋</button>
+      <button class="btn btn-outline-secondary btn-sm icon-btn" onclick="copyLog()" title="Sao chép Console Log">📜</button>
+      <button class="btn btn-outline-secondary btn-sm icon-btn" onclick="clearOutput()" title="Xóa màn hình Output">🧹</button>
+      <button class="btn btn-outline-danger btn-sm icon-btn" onclick="clearCode()" title="Xóa tất cả code">🗑️</button>
     </div>
   </div>
 
+  <!-- Content -->
   <div class="tab-content" id="ideTabContent">
     <div class="tab-pane fade show active" id="edit-pane">
       <textarea id="codeEditor"></textarea>
@@ -180,22 +183,20 @@
       }
     }
 
-    // Hàm xóa tất cả code
     function clearCode() {
-      if (confirm("Bạn có chắc chắn muốn xóa toàn bộ code trong trình biên soạn?")) {
+      if (confirm("Bạn có chắc muốn xóa toàn bộ code trong trình biên soạn?")) {
         editor.setValue("");
         localStorage.removeItem('alpytide_py_code');
       }
     }
 
-    // Hàm xóa log output
     function clearOutput() {
       document.getElementById('consoleOutput').textContent = "> Đang chờ thực thi...";
     }
 
     function copyCode() {
       navigator.clipboard.writeText(editor.getValue());
-      alert("Đã sao chép mã Python!");
+      alert("Đã sao chép code Python!");
     }
 
     function copyLog() {
