@@ -22,22 +22,24 @@ app.post('/api/run', (req, res) => {
     return res.status(400).json({ output: 'Lỗi: Không có code Python!' });
   }
 
+  // Tự động mock hàm input() để tránh kẹt vòng lặp vô hạn / timeout
+  const mockedCode = `import sys\nsys.stdin = open('/dev/null', 'r')\n` + code;
+
   const fileName = `run_${Date.now()}_${Math.floor(Math.random() * 1000)}.py`;
   const filePath = path.join(__dirname, fileName);
 
-  fs.writeFile(filePath, code, (err) => {
+  fs.writeFile(filePath, mockedCode, (err) => {
     if (err) {
       return res.status(500).json({ output: `Lỗi ghi file server: ${err.message}` });
     }
 
-    // Tăng timeout lên 20 giây để tránh ngắt kết nối quá sớm
-    exec(`python3 "${filePath}"`, { timeout: 20000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+    exec(`python3 "${filePath}"`, { timeout: 15000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
       fs.unlink(filePath, () => {});
 
       if (error && error.killed) {
         return res.json({ 
           status: 'timeout', 
-          output: '⚠️ Lỗi: Chương trình chạy quá 20 giây hoặc kẹt lệnh chờ nhập liệu (input) vô hạn!' 
+          output: '⚠️ Lỗi: Chương trình dính vòng lặp vô hạn (while True) không có điểm dừng!' 
         });
       }
 
