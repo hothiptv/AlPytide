@@ -49,6 +49,7 @@
       align-items: center;
       margin-bottom: 6px;
       flex-shrink: 0;
+      gap: 4px;
     }
 
     .tab-content {
@@ -213,7 +214,7 @@
       animation: pulse-glow 2s infinite;
     }
 
-    /* Spinner Loading với hiệu ứng chuyển màu mượt */
+    /* Spinner Loading */
     .loading-overlay {
       display: none;
       position: absolute;
@@ -249,12 +250,12 @@
 
     .btn-action {
       height: 30px;
-      min-width: 32px;
-      padding: 0 8px;
+      min-width: 30px;
+      padding: 0 6px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 11px;
       transition: transform 0.15s ease, background-color 0.2s, filter 0.2s;
     }
 
@@ -265,6 +266,14 @@
     .btn-action:hover {
       filter: brightness(1.15);
     }
+
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
   </style>
 </head>
 <body>
@@ -272,7 +281,7 @@
   <div class="brand-title text-center mb-1">ALPYTIDE STUDIO (PYTHON ENGINE)</div>
 
   <div class="top-bar">
-    <ul class="nav nav-tabs border-0" id="ideTabs">
+    <ul class="nav nav-tabs border-0 flex-shrink-0" id="ideTabs">
       <li class="nav-item">
         <button class="nav-link active" id="edit-tab" onclick="switchTab('edit')">main.py</button>
       </li>
@@ -281,12 +290,21 @@
       </li>
     </ul>
 
-    <div class="d-flex align-items-center gap-1">
-      <button class="btn btn-primary btn-action fw-bold" id="runBtn" onclick="runPythonCode()">
-        <i class="fa-solid fa-play me-1"></i>Run
+    <div class="action-group">
+      <button class="btn btn-primary btn-action fw-bold" id="runBtn" onclick="runPythonCode()" title="Chạy code">
+        <i class="fa-solid fa-play"></i>
       </button>
       <button class="btn btn-outline-secondary btn-action" onclick="copyCode()" title="Sao chép Code">
         <i class="fa-regular fa-copy"></i>
+      </button>
+      <button class="btn btn-outline-secondary btn-action" onclick="cutCode()" title="Cắt Code">
+        <i class="fa-solid fa-scissors"></i>
+      </button>
+      <button class="btn btn-outline-secondary btn-action" onclick="pasteCode()" title="Dán Code">
+        <i class="fa-solid fa-paste"></i>
+      </button>
+      <button class="btn btn-outline-secondary btn-action" onclick="selectAllCode()" title="Bôi tất cả">
+        <i class="fa-solid fa-object-ungroup"></i>
       </button>
       <button class="btn btn-outline-secondary btn-action" onclick="copyLog()" title="Sao chép Console Output">
         <i class="fa-solid fa-terminal"></i>
@@ -352,7 +370,7 @@
       lineWrapping: true,
       indentUnit: 4,
       autoCloseBrackets: true,
-      inputStyle: 'textarea' // Giúp bàn phím điện thoại gõ tiếng Việt có dấu ổn định hơn
+      inputStyle: 'textarea'
     });
 
     editor.setValue(initialCode);
@@ -490,6 +508,32 @@
     function copyCode() {
       navigator.clipboard.writeText(editor.getValue());
       alert("Đã sao chép code!");
+    }
+
+    function cutCode() {
+      const selectedText = editor.getSelection();
+      if (selectedText) {
+        navigator.clipboard.writeText(selectedText);
+        editor.replaceSelection("");
+        alert("Đã cắt đoạn code đã chọn!");
+      } else {
+        navigator.clipboard.writeText(editor.getValue());
+        editor.setValue("");
+        alert("Đã cắt toàn bộ code!");
+      }
+    }
+
+    async function pasteCode() {
+      try {
+        const text = await navigator.clipboard.readText();
+        editor.replaceSelection(text);
+      } catch (err) {
+        alert("Trình duyệt không cho phép dán tự động, hãy giữ và dán trực tiếp vào ô code!");
+      }
+    }
+
+    function selectAllCode() {
+      editor.execCommand("selectAll");
     }
 
     function copyLog() {
