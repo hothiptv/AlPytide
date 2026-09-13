@@ -30,14 +30,14 @@ app.post('/api/run', (req, res) => {
       return res.status(500).json({ output: `Lỗi ghi file server: ${err.message}` });
     }
 
-    // Chạy trực tiếp Python với giới hạn thời gian 15 giây
-    exec(`python3 "${filePath}"`, { timeout: 15000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+    // Tăng timeout lên 20 giây để tránh ngắt kết nối quá sớm
+    exec(`python3 "${filePath}"`, { timeout: 20000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
       fs.unlink(filePath, () => {});
 
       if (error && error.killed) {
         return res.json({ 
           status: 'timeout', 
-          output: '⚠️ Lỗi: Chương trình chạy quá 15 giây hoặc kẹt lệnh chờ nhập liệu (input) vô hạn!' 
+          output: '⚠️ Lỗi: Chương trình chạy quá 20 giây hoặc kẹt lệnh chờ nhập liệu (input) vô hạn!' 
         });
       }
 
