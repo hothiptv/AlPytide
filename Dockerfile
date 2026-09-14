@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.12-slim
 
 # Cài đặt toàn bộ công cụ hệ thống, trình biên dịch C/C++ và các thư viện phát triển (headers)
 # để build trơn tru mọi thư viện Python (numpy, pandas, pillow, matplotlib, psycopg2, v.v.)
