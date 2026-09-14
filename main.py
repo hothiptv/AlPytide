@@ -5,9 +5,11 @@ import multiprocessing
 import math
 import json
 from datetime import datetime
-from fastapi import FastAPI, HTTPException
+from typing import List, Optional
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
+
 try:
     import pandas as pd
     import numpy as np
@@ -18,10 +20,10 @@ except ImportError:
 app = FastAPI(
     title="AlPytide Python Engine",
     description="Backend API xử lý và thực thi code Python nâng cao cho AlPytide Mobile IDE",
-    version="2.1.0",
+    version="2.2.0",
 )
 
-# 1. Bật CORS toàn diện cho phép mọi client gọi API
+# Cấu hình CORS toàn diện cho phép Frontend gọi API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,27 +33,20 @@ app.add_middleware(
 )
 
 
-from pydantic import BaseModel, Field
-
 class CodeRequest(BaseModel):
-    code: str = Field(..., description="Đoạn mã Python cần thực thi")
+    code: str = Field(..., description="Mã nguồn Python cần thực thi")
+    inputs: Optional[List[str]] = Field(default=[], description="Danh sách dữ liệu nhập cho các lệnh input()")
 
 
-# Worker chạy trong tiến trình độc lập để cô lập môi trường và kiểm soát timeout
-def run_code_worker(code: str, queue: multiprocessing.Queue):
-    # Chặn việc gọi input() trực tiếp trên server backend để tránh bị treo luồng
-    if "input(" in code:
-        queue.put({
-            "success": False, 
-            "output": "❌ Lỗi: Hàm input() trực tiếp không được hỗ trợ trên server backend API. Vui lòng gán sẵn giá trị biến."
-        })
-        return
-
+# Tiến trình độc lập xử lý và thực thi code Python
+def run_code_worker(code: str, inputs: list, queue: multiprocessing.Queue):
     buffer = io.StringIO()
     sys.stdout = buffer
     sys.stderr = buffer
 
-    # Môi trường global an toàn, tích hợp sẵn các thư viện phân tích dữ liệu phổ biến
+    # Giả lập sys.stdin để cấp dữ liệu cho toàn bộ các lệnh input() trong code
+    sys.stdin = io.StringIO("\n".join(inputs) + "\n")
+
     safe_globals = {
         "__builtins__": __builtins__,
         "math": math,
@@ -65,11 +60,9 @@ def run_code_worker(code: str, queue: multiprocessing.Queue):
         safe_globals["np"] = np
 
     try:
-        # Thực thi đoạn mã code Python của người dùng
         exec(code, safe_globals)
         output = buffer.getvalue()
         
-        # Nếu code chạy xong mà không có print gì thì trả về thông báo hoàn thành nhẹ nhàng
         if not output.strip():
             output = "[Execution completed with no output]"
             
@@ -81,36 +74,25 @@ def run_code_worker(code: str, queue: multiprocessing.Queue):
         buffer.close()
 
 
-# 2. ROUTE GET / TRẢ VỀ FILE TEMPLATES/DOCS.HTML HOẶC GIAO DIỆN MẶC ĐỊNH
-@app.get("/", response_class=HTMLResponse)
-async def get_documentation():
-    try:
-        with open("templates/docs.html", "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        return """
-        <html>
-            <head><title>AlPytide Engine</title></head>
-            <body style="font-family: monospace; background: #18181b; color: #f4f4f5; text-align: center; padding: 50px;">
-                <h2 style="color: #10b981;">AlPytide Python Engine: ONLINE 🚀</h2>
-                <p>Server đang hoạt động bình thường! Không tìm thấy tệp <b>templates/docs.html</b>.</p>
-            </body>
-        </html>
-        """
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "engine": "AlPytide Advanced Python Runner",
+        "version": "2.2.0",
+        "python_version": sys.version
+    }
 
 
-# 3. ROUTE GET /api ĐỂ PING CHECK TRẠNG THÁI SERVER
 @app.get("/api")
 async def ping_check():
     return {
         "status": "online",
-        "engine": "AlPytide Advanced Python Runner",
-        "version": "2.1.0",
-        "message": "AlPytide Engine Ready",
+        "engine": "AlPytide Engine Ready",
+        "version": "2.2.0"
     }
 
 
-# 4. ROUTE POST /api THỰC THI CODE PYTHON (GIỚI HẠN TIMEOUT 5 GIÂY)
 @app.post("/api")
 async def execute_code(request: CodeRequest):
     code = request.code.strip()
@@ -120,13 +102,12 @@ async def execute_code(request: CodeRequest):
 
     queue = multiprocessing.Queue()
     process = multiprocessing.Process(
-        target=run_code_worker, args=(code, queue)
+        target=run_code_worker, 
+        args=(code, request.inputs or [], queue)
     )
 
     process.start()
-
-    # Chờ tối đa 5 giây để phòng chống vòng lặp vô tận (infinite loop)
-    process.join(timeout=5.0)
+    process.join(timeout=5.0)  # Giới hạn tối đa 5 giây
 
     if process.is_alive():
         process.terminate()
@@ -135,12 +116,11 @@ async def execute_code(request: CodeRequest):
             "output": "❌ Lỗi: Thời gian thực thi vượt quá giới hạn 5 giây (Timeout / Vòng lặp vô tận)!"
         }
 
-    output_result = "❌ Lỗi hệ thống: Không nhận được phản hồi từ tiến trình thực thi."
+    output_result = "❌ Lỗi hệ thống: Không nhận được phản hồi từ Engine."
     if not queue.empty():
         result = queue.get()
         output_result = result.get("output", "")
 
-    # Dọn dẹp queue
     queue.close()
     queue.join_thread()
 
@@ -149,5 +129,4 @@ async def execute_code(request: CodeRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    # Khởi động server trỏ đúng cổng 10000 tương thích với Dockerfile và Render
     uvicorn.run("main:app", host="0.0.0.0", port=10000, reload=True)
