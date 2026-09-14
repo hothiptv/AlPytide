@@ -9,11 +9,11 @@ from pydantic import BaseModel
 
 app = FastAPI(
     title="Alpytide Python Engine",
-    description="Backend API nâng cao xử lý và thực thi code Python",
+    description="Backend API xử lý và thực thi code Python cho AlPyedit",
     version="2.0.0",
 )
 
-# 1. Bật CORS để cho phép Frontend gọi API
+# 1. Bật CORS cho phép giao diện gọi API từ bất kỳ tên miền nào
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,49 +27,44 @@ class CodeRequest(BaseModel):
     code: str
 
 
-# Hàm chạy code trong Process riêng lẻ để kiểm soát Timeout
+# Process riêng lẻ để thực thi code và kiểm soát Timeout
 def run_code_worker(code: str, queue: multiprocessing.Queue):
     buffer = io.StringIO()
     sys.stdout = buffer
     sys.stderr = buffer
 
-    # Môi trường cách ly cơ bản (Sandbox)
     safe_globals = {
         "__builtins__": __builtins__,
     }
-
-    # Bỏ hoặc giới hạn một số hàm/module nguy hiểm nếu muốn
-    # del safe_globals['__builtins__']['eval']
 
     try:
         exec(code, safe_globals)
         output = buffer.getvalue()
         queue.put({"success": True, "output": output})
     except Exception:
-        # Bắt chi tiết lỗi SyntaxError, NameError, Exception...
         error_msg = traceback.format_exc()
         queue.put({"success": False, "output": error_msg})
 
 
-# 2. ROUTE GET / TRẢ VỀ TRANG TÀI LIỆU HTML
+# 2. ROUTE GET / TRẢ VỀ FILE TEMPLATES/DOCS.HTML
 @app.get("/", response_class=HTMLResponse)
 async def get_documentation():
     try:
-        # Đọc trực tiếp file index.html nằm cùng thư mục
-        with open("index.html", "r", encoding="utf-8") as f:
+        # Đọc trực tiếp tệp docs.html trong thư mục templates
+        with open("templates/docs.html", "r", encoding="utf-8") as f:
             return f.read()
     except FileNotFoundError:
         return """
         <html>
             <body style="font-family: sans-serif; text-align: center; padding: 50px;">
                 <h2 style="color: #0284c7;">Alpytide Engine Status: ONLINE 🚀</h2>
-                <p>Không tìm thấy file <b>index.html</b> trong thư mục root. Vui lòng tạo file index.html để hiển thị giao diện tài liệu.</p>
+                <p>Không tìm thấy tệp <b>templates/docs.html</b> trên Server!</p>
             </body>
         </html>
         """
 
 
-# 3. ROUTE GET /api ĐỂ PING CHECK (CẦN CHO ALPYTIDE.INIT)
+# 3. ROUTE GET /api ĐỂ PING CHECK (ALPYTIDE.INIT KẾT NỐI)
 @app.get("/api")
 async def ping_check():
     return {
@@ -80,7 +75,7 @@ async def ping_check():
     }
 
 
-# 4. ROUTE POST /api THỰC THI CODE PYTHON NÂNG CAO (TIMEOUT 5S)
+# 4. ROUTE POST /api THỰC THI CODE PYTHON (GIỚI HẠN 5S RUNTIME)
 @app.post("/api")
 async def execute_code(request: CodeRequest):
     code = request.code.strip()
@@ -95,7 +90,7 @@ async def execute_code(request: CodeRequest):
 
     process.start()
 
-    # Giới hạn thời gian chạy tối đa là 5 giây (tránh while True gây treo server)
+    # Tự động hủy nếu code chạy quá 5 giây (chống lặp vô tận)
     process.join(timeout=5)
 
     if process.is_alive():
@@ -115,4 +110,4 @@ async def execute_code(request: CodeRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
