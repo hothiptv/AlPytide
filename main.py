@@ -5,14 +5,13 @@ import subprocess
 import traceback
 from typing import Dict, Any
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 app = FastAPI(title="Python API", docs_url=None, redoc_url=None)
 
-# Cho phép HTML từ mọi nơi gọi API mà không bị chặn CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,7 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Xác định đường dẫn tuyệt đối tới thư mục templates
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates_dir = os.path.join(BASE_DIR, "templates")
 templates = Jinja2Templates(directory=templates_dir)
@@ -36,22 +34,17 @@ def auto_install_and_import(package_name: str):
     except ImportError:
         subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
 
-# Tự động chuyển hướng từ trang chủ "/" sang "/docs"
-@app.get("/", response_class=RedirectResponse)
-async def redirect_to_docs():
-    return "/docs"
-
+# Hiển thị Web IDE khi truy cập / hoặc /docs
+@app.get("/", response_class=HTMLResponse)
 @app.get("/docs", response_class=HTMLResponse)
-async def get_docs(request: Request):
-    """Giao diện Tài liệu sử dụng Bootstrap standard"""
+async def get_ide_page(request: Request):
     return templates.TemplateResponse("docs.html", {"request": request})
 
 @app.post("/api")
 async def execute_python_code(data: CodeExecutionRequest) -> Dict[str, Any]:
-    """API Nhận và Xử lý Python Code"""
+    """API xử lý code Python gửi từ Web IDE"""
     code = data.code
     
-    # Bắt luồng stdout và stderr
     old_stdout = sys.stdout
     old_stderr = sys.stderr
     redirected_output = io.StringIO()
@@ -69,7 +62,6 @@ async def execute_python_code(data: CodeExecutionRequest) -> Dict[str, Any]:
     error_message = None
 
     try:
-        # Thực thi code Python
         exec(code, global_vars)
     except Exception as e:
         status = "error"
