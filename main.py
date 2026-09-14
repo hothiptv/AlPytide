@@ -1,18 +1,12 @@
-import io
-import sys
-import os
-import subprocess
-import traceback
-from typing import Dict, Any
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+import sys
+import io
 
-app = FastAPI(title="Python API Engine", docs_url=None, redoc_url=None)
+app = FastAPI()
 
-# Mở CORS để mọi giao diện HTML Web IDE có thể kết nối tới
+# 1. Bật CORS để cho phép HTML chạy từ localhost/mọi trang web gọi tới API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,62 +15,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-templates_dir = os.path.join(BASE_DIR, "templates")
-templates = Jinja2Templates(directory=templates_dir)
-
-class CodeExecutionRequest(BaseModel):
+class CodeRequest(BaseModel):
     code: str
 
-def auto_install_and_import(package_name: str):
-    """Tự động tải thư viện mới trên Server nếu code yêu cầu"""
-    try:
-        __import__(package_name)
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
+# 2. BẮT BUỘC THÊM ROUTE GET /api ĐỂ ALPYTIDE.INIT() PING KẾT NỐI
+@app.get("/api")
+async def ping_check():
+    return {"status": "online", "message": "Alpytide Engine Ready"}
 
-# Trang Docs: Hướng dẫn tích hợp API cho Web IDE
-@app.get("/", response_class=HTMLResponse)
-@app.get("/docs", response_class=HTMLResponse)
-async def get_docs(request: Request):
-    return templates.TemplateResponse("docs.html", {"request": request})
-
-# Endpoint chính xử lý code cho Web IDE
+# 3. Route POST /api thực thi code Python
 @app.post("/api")
-async def execute_python_code(data: CodeExecutionRequest) -> Dict[str, Any]:
-    code = data.code
-    
+async def execute_code(request: CodeRequest):
     old_stdout = sys.stdout
-    old_stderr = sys.stderr
     redirected_output = io.StringIO()
-    redirected_error = io.StringIO()
-    
     sys.stdout = redirected_output
-    sys.stderr = redirected_error
     
-    global_vars = {
-        "__name__": "__main__",
-        "auto_install": auto_install_and_import
-    }
-    
-    status = "success"
-    error_message = None
-
     try:
-        # Thực thi code hoàn toàn trên Server
-        exec(code, global_vars)
+        exec(request.code, {})
+        output = redirected_output.getvalue()
     except Exception as e:
-        status = "error"
-        error_message = traceback.format_exc()
+        output = str(e)
     finally:
         sys.stdout = old_stdout
-        sys.stderr = old_stderr
-
-    output_str = redirected_output.getvalue()
-    error_str = redirected_error.getvalue()
-
-    return {
-        "status": status,
-        "output": output_str if status == "success" else "",
-        "error": error_message or error_str
-    }
+        
+    return {"output": output}
