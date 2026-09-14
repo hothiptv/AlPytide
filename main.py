@@ -10,8 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-app = FastAPI(title="Python API", docs_url=None, redoc_url=None)
+app = FastAPI(title="Python API Engine", docs_url=None, redoc_url=None)
 
+# Mở CORS để mọi giao diện HTML Web IDE có thể kết nối tới
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,21 +29,21 @@ class CodeExecutionRequest(BaseModel):
     code: str
 
 def auto_install_and_import(package_name: str):
-    """Tự động pip install nếu thiếu thư viện"""
+    """Tự động tải thư viện mới trên Server nếu code yêu cầu"""
     try:
         __import__(package_name)
     except ImportError:
         subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
 
-# Hiển thị Web IDE khi truy cập / hoặc /docs
+# Trang Docs: Hướng dẫn tích hợp API cho Web IDE
 @app.get("/", response_class=HTMLResponse)
 @app.get("/docs", response_class=HTMLResponse)
-async def get_ide_page(request: Request):
+async def get_docs(request: Request):
     return templates.TemplateResponse("docs.html", {"request": request})
 
+# Endpoint chính xử lý code cho Web IDE
 @app.post("/api")
 async def execute_python_code(data: CodeExecutionRequest) -> Dict[str, Any]:
-    """API xử lý code Python gửi từ Web IDE"""
     code = data.code
     
     old_stdout = sys.stdout
@@ -62,6 +63,7 @@ async def execute_python_code(data: CodeExecutionRequest) -> Dict[str, Any]:
     error_message = None
 
     try:
+        # Thực thi code hoàn toàn trên Server
         exec(code, global_vars)
     except Exception as e:
         status = "error"
