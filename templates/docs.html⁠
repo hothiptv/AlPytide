@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python API Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; color: #212529; }
+        .header-box { background-color: #0d6efd; color: white; padding: 2rem 0; margin-bottom: 2rem; }
+        pre { background-color: #212529; color: #f8f9fa; padding: 1rem; border-radius: 5px; }
+        .card { margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body>
+
+<div class="header-box text-center">
+    <div class="container">
+        <h1>Python API Documentation</h1>
+        <p class="lead">Hệ thống thực thi Python Backend cho HTML qua HTTP API</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white font-monospace">
+                    POST https://alpytide.onrender.com/api
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Cấu trúc Request Body (JSON)</h5>
+                    <pre><code>{
+  "code": "print('Hello World!')"
+}</code></pre>
+
+                    <h5 class="card-title mt-4">Cấu trúc Response (JSON)</h5>
+                    <pre><code>{
+  "status": "success",
+  "output": "Hello World!\n",
+  "error": null
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Ví dụ kết nối Database & Call API bằng Fetch (JavaScript HTML)</h5>
+                    <p>Dưới đây là đoạn mã HTML/JS gọi tới Python API để truy vấn SQLite / PostgreSQL hoặc gọi API ngoài:</p>
+                    <pre><code>&lt;script&gt;
+async function runPython() {
+    const pythonCode = `
+import requests
+import sqlite3
+
+# 1. Gọi API bên ngoài
+res = requests.get('https://api.github.com')
+print("GitHub API Status:", res.status_code)
+
+# 2. Xử lý Database
+conn = sqlite3.connect(':memory:')
+cursor = conn.cursor()
+cursor.execute('CREATE TABLE users (id INT, name TEXT)')
+cursor.execute('INSERT INTO users VALUES (1, "Alice")')
+cursor.execute('SELECT * FROM users')
+print("DB Result:", cursor.fetchall())
+`;
+
+    const response = await fetch('https://alpytide.onrender.com/api', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: pythonCode })
+    });
+
+    const data = await response.json();
+    console.log("Output:", data.output);
+}
+&lt;/script&gt;</code></pre>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Thư viện có sẵn</h5>
+                    <ul>
+                        <li><b>Database Driver:</b> <code>psycopg2-binary</code> (PostgreSQL), <code>pymysql</code> (MySQL), <code>pymongo</code> (MongoDB), <code>sqlite3</code> (Tích hợp sẵn).</li>
+                        <li><b>API & Web:</b> <code>requests</code>, <code>httpx</code>.</li>
+                        <li><b>Xử lý dữ liệu:</b> <code>pandas</code>, <code>numpy</code>.</li>
+                        <li><b>Cài đặt thư viện mới:</b> Nếu cần thêm gói khác, có thể dùng câu lệnh <code>auto_install('tên_gói')</code> trực tiếp trong chuỗi code Python gửi lên.</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
