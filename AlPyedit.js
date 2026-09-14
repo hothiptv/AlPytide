@@ -1,6 +1,6 @@
 /* ============================================================
-   EDITOR CORE LOGIC
-   Xử lý logic nhập liệu, tính toán con trỏ, highlight & menu
+   EDITOR CORE LOGIC - ALPYEDIT
+   Xử lý logic nhập liệu, tính toán con trỏ, highlight & context menu
    ============================================================ */
 
 const editor = document.getElementById("realEditor");
@@ -9,7 +9,7 @@ const lineNumbers = document.getElementById("lineNumbers");
 const virtualCaret = document.getElementById("virtualCaret");
 const caretMirror = document.getElementById("caretMirror");
 const longPressMenu = document.getElementById("longPressMenu");
-const searchInput = document.getElementById("searchInput");
+const searchInput = document.querySelector(".menu-search-input");
 
 const DEFAULT_CODE = "";
 let currentSearchQuery = "";
@@ -21,6 +21,13 @@ window.addEventListener("load", () => {
         updateEditor();
     }
 });
+
+// Ô tìm kiếm trong Context Menu
+if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+        onSearchInput(e.target.value);
+    });
+}
 
 // Đồng bộ hóa cuộn giữa Textarea và Highlight Layer
 if (editor) {
@@ -45,7 +52,7 @@ if (editor) {
         const pairs = { '"': '"', "'": "'", '(': ')', '[': ']', '{': '}' };
         const closeChars = ['"', "'", ')', ']', '}'];
 
-        // Nếu gõ ký tự đóng ngoặc khi đã có sẵn trước con trỏ
+        // Bỏ qua ký tự đóng ngoặc trùng lặp
         if (closeChars.includes(e.key) && start === end && val.charAt(start) === e.key) {
             e.preventDefault();
             editor.selectionStart = editor.selectionEnd = start + 1;
@@ -68,7 +75,7 @@ if (editor) {
             return;
         }
 
-        // Xử lý Xóa (Backspace) cho ngoặc đôi và Indent 4 space
+        // Xử lý Backspace cho cặp ngoặc và Indent 4 space
         if (e.key === 'Backspace' && start === end && start > 0) {
             const charBefore = val.charAt(start - 1);
             const charAfter = val.charAt(start);
@@ -90,7 +97,7 @@ if (editor) {
             }
         }
 
-        // Tự động thụt lùi dòng (Auto-indentation) khi Enter
+        // Tự động thụt dòng (Auto-indentation) khi nhấn Enter
         if (e.key === 'Enter') {
             e.preventDefault();
             const lineStart = val.lastIndexOf('\n', start - 1) + 1;
@@ -106,7 +113,14 @@ if (editor) {
     });
 
     editor.addEventListener("focus", () => virtualCaret.style.display = "block");
-    editor.addEventListener("blur", () => virtualCaret.style.display = "none");
+    editor.addEventListener("blur", () => {
+        // Tránh ẩn ngay khi nhấn vào context menu
+        setTimeout(() => {
+            if (document.activeElement !== searchInput) {
+                virtualCaret.style.display = "none";
+            }
+        }, 150);
+    });
 }
 
 document.addEventListener("selectionchange", () => {
@@ -115,7 +129,7 @@ document.addEventListener("selectionchange", () => {
     }
 });
 
-// Cập nhật giao diện toàn bộ Editor
+// Cập nhật giao diện Editor
 function updateEditor() {
     if (!editor) return;
     const code = editor.value;
@@ -135,13 +149,13 @@ function updateEditor() {
     updateVirtualCaret();
 }
 
-// Tính toán vị trí hiển thị con trỏ ảo
+// Tính toán vị trí hiển thị con trỏ ảo chuẩn xác theo lề
 function updateVirtualCaret() {
     if (!editor || !caretMirror || !virtualCaret) return;
     const pos = editor.selectionStart;
     const textBefore = editor.value.substring(0, pos);
 
-    caretMirror.style.width = (editor.clientWidth - 20) + 'px';
+    caretMirror.style.width = editor.clientWidth + 'px';
     caretMirror.innerHTML = '';
 
     const textNode = document.createTextNode(textBefore);
@@ -163,7 +177,7 @@ function updateVirtualCaret() {
     }
 }
 
-// Tìm kiếm text
+// Tìm kiếm văn bản
 function onSearchInput(query) {
     currentSearchQuery = query;
     updateEditor();
@@ -196,7 +210,7 @@ function highlightSyntax(code) {
     return res;
 }
 
-// Kiểm tra lỗi đóng/mở ngoặc đơn giản
+// Kiểm tra lỗi ngoặc
 function checkBracketErrors(code, errorLines) {
     const stack = [];
     const lines = code.split('\n');
@@ -212,7 +226,7 @@ function checkBracketErrors(code, errorLines) {
     stack.forEach(item => errorLines.add(item.line));
 }
 
-// Xử lý sự kiện Nhấn giữ (Long Press) để bật Popup Menu
+// Sự kiện Nhấn giữ (Long Press) bật Menu
 let pressTimer = null;
 
 function startPress(e) {
@@ -235,8 +249,8 @@ function cancelPress() {
 
 function showMenu(x, y) {
     if (!longPressMenu) return;
-    const menuWidth = 180;
-    const menuHeight = 180;
+    const menuWidth = 160;
+    const menuHeight = 200;
 
     let posX = Math.min(x, window.innerWidth - menuWidth - 8);
     let posY = Math.min(y, window.innerHeight - menuHeight - 8);
@@ -260,24 +274,38 @@ if (editor) {
     editor.addEventListener('mouseleave', cancelPress);
 }
 
-// Các hàm tiện ích thao tác dữ liệu
-function clearCode() {
-    if (confirm("Xóa tất cả mã?")) {
-        editor.value = "";
+// ============================================================
+// BỘ HÀM THAO TÁC DỮ LIỆU & BỘ NHỚ TẠM (CLIPBOARD COMMANDS)
+// ============================================================
+
+// 1. Cắt (Cut)
+async function cutCode() {
+    hideMenu();
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+
+    if (start !== end) {
+        const textToCut = editor.value.substring(start, end);
+        await navigator.clipboard.writeText(textToCut);
+        editor.value = editor.value.substring(0, start) + editor.value.substring(end);
+        editor.selectionStart = editor.selectionEnd = start;
         updateEditor();
     }
 }
 
+// 2. Sao chép (Copy)
 async function copyCode() {
-    const textToCopy = editor.selectionStart !== editor.selectionEnd
-        ? editor.value.substring(editor.selectionStart, editor.selectionEnd)
-        : editor.value;
+    hideMenu();
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const textToCopy = start !== end ? editor.value.substring(start, end) : editor.value;
 
     await navigator.clipboard.writeText(textToCopy);
-    alert("Đã sao chép!");
 }
 
+// 3. Dán (Paste)
 async function pasteCode() {
+    hideMenu();
     try {
         const text = await navigator.clipboard.readText();
         if (text) {
@@ -288,35 +316,53 @@ async function pasteCode() {
             updateEditor();
         }
     } catch {
-        alert("Không thể đọc bộ nhớ tạm!");
-    }
-}
-
-async function replaceCode() {
-    try {
-        const text = await navigator.clipboard.readText();
+        // Fallback cho trình duyệt chặn quyền đọc clipboard
+        const text = prompt("Dán nội dung vào đây:");
         if (text) {
-            editor.value = text;
-            updateEditor();
-            alert("Đã thay thế!");
-        }
-    } catch {
-        const newText = prompt("Nhập đoạn code mới:");
-        if (newText !== null) {
-            editor.value = newText;
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            editor.value = editor.value.substring(0, start) + text + editor.value.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + text.length;
             updateEditor();
         }
     }
 }
 
+// 4. Chọn tất cả (Select All)
 function selectAllCode() {
-    editor.focus();
-    editor.setSelectionRange(0, editor.value.length);
+    hideMenu();
+    if (editor) {
+        editor.focus();
+        editor.setSelectionRange(0, editor.value.length);
+    }
 }
 
-function resetEditor() {
-    if (confirm("Reset cấu hình mặc định?")) {
-        editor.value = DEFAULT_CODE;
+// 5. Xóa tất cả (Clear All)
+function clearCode() {
+    hideMenu();
+    if (confirm("Clear all code?")) {
+        editor.value = "";
         updateEditor();
+    }
+}
+
+// 6. Điều hướng gọi lệnh chung từ Menu (Lệnh linh hoạt)
+function execCommand(cmd) {
+    switch (cmd) {
+        case 'cut':
+            cutCode();
+            break;
+        case 'copy':
+            copyCode();
+            break;
+        case 'paste':
+            pasteCode();
+            break;
+        case 'selectAll':
+            selectAllCode();
+            break;
+        case 'clear':
+            clearCode();
+            break;
     }
 }
