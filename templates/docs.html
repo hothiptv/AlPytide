@@ -3,126 +3,412 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alpytide Engine - Tài Liệu API & Hướng Dẫn Tích Hợp</title>
+    <title>Alpytide Engine & Code Editor - Tài Liệu Tích Hợp</title>
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body { background-color: #f8f9fa; color: #212529; font-family: system-ui, -apple-system, sans-serif; }
-        .header-box { background-color: #212529; color: white; padding: 2.5rem 1rem; margin-bottom: 2rem; }
-        pre { background-color: #1e1e1e; color: #d4d4d4; padding: 1.2rem; border-radius: 8px; font-size: 0.85rem; overflow-x: auto; }
-        .card { margin-bottom: 1.5rem; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .api-url-box { background: #e9ecef; padding: 12px 16px; border-radius: 6px; font-family: monospace; font-weight: bold; word-break: break-all; }
-        .badge-status { font-size: 0.8rem; padding: 5px 10px; border-radius: 4px; }
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-code: #0f172a;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --success: #16a34a;
+            --accent: #9333ea;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Top Header Area */
+        .doc-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border);
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .doc-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .doc-subtitle {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            max-width: 600px;
+            margin: 0.5rem auto 0;
+        }
+
+        /* Card Container */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: #cbd5e1;
+        }
+
+        .card-header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.25rem;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        /* Code Blocks */
+        pre {
+            background-color: var(--bg-code) !important;
+            color: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            font-size: 0.88rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 0;
+        }
+
+        code {
+            color: var(--primary);
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        /* API Box Display */
+        .api-url-box {
+            background-color: #f1f5f9;
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            color: #166534;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .badge-method {
+            background-color: #16a34a;
+            color: #ffffff;
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Custom Button */
+        .btn-custom {
+            background-color: var(--primary);
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-custom:hover {
+            background-color: var(--primary-hover);
+            color: #ffffff;
+        }
+
+        /* Table Styling */
+        .table-custom {
+            width: 100%;
+            margin-bottom: 0;
+            color: var(--text-main);
+            border-color: var(--border);
+        }
+
+        .table-custom th {
+            background-color: #f8fafc;
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 0.88rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-custom td {
+            font-size: 0.88rem;
+            border-color: var(--border);
+            vertical-align: middle;
+            color: #334155;
+        }
+
+        /* Feature Box Minimal */
+        .feature-box {
+            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            height: 100%;
+        }
+
+        .feature-title {
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-desc {
+            color: var(--text-sub);
+            font-size: 0.88rem;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header-box text-center">
+<!-- Header Banner -->
+<header class="doc-header">
     <div class="container">
-        <h2 class="fw-bold">🐍 Alpytide Python Engine Documentation</h2>
-        <p class="lead mb-0 fs-6">Tài liệu tích hợp Engine thực thi Python Serverless cho Web IDE</p>
+        <div class="doc-title">
+            <i class="fa-solid fa-code text-primary me-2"></i>Alpytide Engine & Editor
+        </div>
+        <p class="doc-subtitle">
+            Tài liệu hướng dẫn nhúng Engine thực thi Python và Bộ soạn thảo mã nguồn gọn nhẹ vào dự án Web của bạn.
+        </p>
     </div>
-</div>
+</header>
 
-<div class="container pb-5">
-    <div class="row">
-        <div class="col-12">
+<main class="container py-4" style="max-width: 900px;">
 
-            <!-- 1. Endpoint API -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold text-dark mb-3">1. Server Endpoint</h5>
-                    <div class="api-url-box d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
-                        <span id="apiUrl">https://alpytide.onrender.com/api</span>
-                        <button class="btn btn-primary btn-sm px-3 text-nowrap" onclick="copyApiUrl()">📋 Sao chép API</button>
+    <!-- 1. Tổng quan Hệ thống -->
+    <section class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-cubes text-primary"></i>
+            <span>1. Thành Phần Hệ Thống</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <div class="feature-title">
+                            <i class="fa-solid fa-server text-success"></i>
+                            <span>Python Engine (Backend)</span>
+                        </div>
+                        <p class="feature-desc">Xử lý và chạy trực tiếp các lệnh Python qua Serverless API, trả kết quả Terminal tức thì.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <div class="feature-title">
+                            <i class="fa-solid fa-file-code text-warning"></i>
+                            <span>AlPyedit UI (Frontend)</span>
+                        </div>
+                        <p class="feature-desc">Khung gõ code hỗ trợ đếm dòng, highlight cú pháp Python, tự đóng ngoặc và menu chạm giữ.</p>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- 2.CDN Thư viện -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold text-dark mb-3">2. Nhúng Thư Viện JS (CDN jsDelivr)</h5>
-                    <p class="text-muted small mb-2">Thêm thẻ script sau vào phần <code>&lt;head&gt;</code> của trang web để xử lý kết nối không bị lỗi CORS:</p>
-                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/templates/alpytide.js"&gt;&lt;/script&gt;</code></pre>
+    <!-- 2. Endpoint & Thư viện nhúng -->
+    <section class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-plug text-warning"></i>
+            <span>2. Tích Hợp Thư Viện & API</span>
+        </div>
+        <div class="card-body">
+            <label class="form-label text-secondary small fw-bold mb-1">SERVER API ENDPOINT</label>
+            <div class="api-url-box d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <span class="badge-method me-2">POST</span>
+                    <span id="apiUrl">https://alpytide.onrender.com/api</span>
                 </div>
+                <button class="btn btn-custom btn-sm px-3" onclick="copyApiUrl()">Sao chép</button>
             </div>
 
-            <!-- 3. Luồng hoạt động & Các Hàm API JS -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold text-dark mb-3">3. Cú Pháp Sử Dụng Thư Viện <code>Alpytide</code></h5>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-bordered align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 25%;">Hàm / Phương thức</th>
-                                    <th style="width: 35%;">Tham số truyền vào</th>
-                                    <th>Mô tả chức năng</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><code>Alpytide.init()</code></td>
-                                    <td><code>(runBtnSelector, outputSelector)</code></td>
-                                    <td>
-                                        Tự động kiểm tra trạng thái Server (Ping Check), tự động khóa nút RUN, hiển thị các thông báo:
-                                        <br>• <i>"API: Vui lòng chờ server được kết nối"</i>
-                                        <br>• <i>"Đang khởi động API. Vui lòng đợi…"</i> (Nút RUN sẽ mở khi kết nối xong)
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><code>Alpytide.run()</code></td>
-                                    <td><code>(code, outputSelector, runBtnSelector)</code></td>
-                                    <td>
-                                        Gửi mã Python lên server thực thi. Hiển thị thông báo:
-                                        <br>• <i>"Đang thực thi code…"</i>
-                                        <br>• <i>"Đã thực thi xong!"</i> (kèm Output kết quả)
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <label class="form-label text-secondary small fw-bold mb-1">MÃ NHÚNG CDN (Thêm vào thẻ &lt;head&gt;)</label>
+            <pre><code>&lt;!-- 1. Style Khung Nhập Liệu Editor --&gt;
+&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/AlPyedit.css"&gt;
 
-            <!-- 4. Mã Nguồn Mẫu (Full Template) -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold text-dark mb-3">4. Ví Dụ Tích Hợp Hoàn Chỉnh (HTML & JS)</h5>
-                    <pre><code>&lt;!-- Thư viện Alpytide JS --&gt;
+&lt;!-- 2. JS Thực Thi Python --&gt;
 &lt;script src="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/templates/alpytide.js"&gt;&lt;/script&gt;
 
-&lt;!-- Giao diện Nút RUN và Output --&gt;
-&lt;button id="runBtn" disabled&gt;▶ RUN CODE&lt;/button&gt;
-&lt;div id="output"&gt;API: Vui lòng chờ server được kết nối&lt;/div&gt;
-
-&lt;script&gt;
-    // 1. Kiểm tra kết nối ngay khi tải trang
-    window.addEventListener("DOMContentLoaded", () => {
-        Alpytide.init("#runBtn", "#output");
-    });
-
-    // 2. Chạy code Python
-    async function execute() {
-        const pythonCode = 'print("Hello World!")';
-        await Alpytide.run(pythonCode, "#output", "#runBtn");
-    }
-&lt;/script&gt;</code></pre>
-                </div>
-            </div>
-
+&lt;!-- 3. JS Điều Khiển Editor --&gt;
+&lt;script src="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/AlPyedit.js" defer&gt;&lt;/script&gt;</code></pre>
         </div>
-    </div>
-</div>
+    </section>
+
+    <!-- 3. Cấu trúc HTML Editor -->
+    <section class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-laptop-code text-primary"></i>
+            <span>3. Cấu Trúc Khung Editor (HTML Required)</span>
+        </div>
+        <div class="card-body">
+            <p class="small text-secondary mb-2">Thêm bộ khung dưới đây vào vị trí bạn muốn đặt ô nhập mã nguồn:</p>
+            <pre><code>&lt;div id="caretMirror"&gt;&lt;/div&gt;
+
+&lt;!-- Khung chứa chính của Editor --&gt;
+&lt;div class="code-area" id="codeArea"&gt;
+    &lt;div id="lineNumbers" class="line-numbers"&gt;&lt;/div&gt;
+    &lt;div id="virtualCaret"&gt;&lt;/div&gt;
+    &lt;div id="highlightLayer" class="editor-layer"&gt;&lt;/div&gt;
+    &lt;textarea id="realEditor" class="editor-layer" spellcheck="false" wrap="off"&gt;&lt;/textarea&gt;
+&lt;/div&gt;
+
+&lt;!-- Menu Nhấn Giữ (Context Menu) --&gt;
+&lt;div id="longPressMenu"&gt;
+    &lt;div class="menu-search-box"&gt;
+        &lt;input type="text" id="searchInput" class="menu-search-input" placeholder="🔍 Tìm kiếm..." oninput="onSearchInput(this.value)"&gt;
+    &lt;/div&gt;
+    &lt;div class="menu-item" onclick="clearCode(); hideMenu();"&gt;Xóa tất cả&lt;/div&gt;
+    &lt;div class="menu-item" onclick="copyCode(); hideMenu();"&gt;Sao chép&lt;/div&gt;
+    &lt;div class="menu-item" onclick="pasteCode(); hideMenu();"&gt;Dán&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+        </div>
+    </section>
+
+    <!-- 4. Danh sách các hàm JS -->
+    <section class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-list-check text-success"></i>
+            <span>4. Cú Pháp Hàm & API</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-custom mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 28%;">Hàm / Phương thức</th>
+                            <th style="width: 30%;">Tham số</th>
+                            <th>Mô tả</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>Alpytide.init()</code></td>
+                            <td><code>(btnID, outputID)</code></td>
+                            <td>Khởi tạo kết nối API, tự mở/khóa nút RUN theo trạng thái Server.</td>
+                        </tr>
+                        <tr>
+                            <td><code>Alpytide.run()</code></td>
+                            <td><code>(code, outputID, btnID)</code></td>
+                            <td>Gửi code Python lên server chạy và hiển thị kết quả Console Output.</td>
+                        </tr>
+                        <tr>
+                            <td><code>copyCode()</code></td>
+                            <td>Không</td>
+                            <td>Sao chép đoạn mã bôi đen (hoặc toàn bộ code) vào Clipboard.</td>
+                        </tr>
+                        <tr>
+                            <td><code>clearCode()</code></td>
+                            <td>Không</td>
+                            <td>Xóa toàn bộ văn bản trong Editor sau khi xác nhận.</td>
+                        </tr>
+                        <tr>
+                            <td><code>onSearchInput()</code></td>
+                            <td><code>(keyword)</code></td>
+                            <td>Tìm và đánh dấu highlight từ khóa trực tiếp trên Editor.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Mẫu nhúng hoàn chỉnh -->
+    <section class="card">
+        <div class="card-header">
+            <i class="fa-solid fa-terminal" style="color: var(--accent);"></i>
+            <span>5. Ví Dụ Tích Hợp Đầy Đủ</span>
+        </div>
+        <div class="card-body">
+            <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="vi"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Python IDE Demo&lt;/title&gt;
+    
+    &lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/AlPyedit.css"&gt;
+    &lt;script src="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/templates/alpytide.js"&gt;&lt;/script&gt;
+    &lt;script src="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/AlPyedit.js" defer&gt;&lt;/script&gt;
+
+    &lt;style&gt;
+        .editor-container { display: flex; position: relative; height: 280px; border: 1px solid #cbd5e1; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body style="background: #f8fafc; color: #0f172a; padding: 20px;"&gt;
+
+    &lt;button id="runBtn" disabled onclick="executePython()"&gt;▶ Chạy Code&lt;/button&gt;
+
+    &lt;div id="caretMirror"&gt;&lt;/div&gt;
+
+    &lt;div class="editor-container mt-2"&gt;
+        &lt;div id="lineNumbers" class="line-numbers"&gt;&lt;/div&gt;
+        &lt;div class="code-area" id="codeArea"&gt;
+            &lt;div id="virtualCaret"&gt;&lt;/div&gt;
+            &lt;div id="highlightLayer" class="editor-layer"&gt;&lt;/div&gt;
+            &lt;textarea id="realEditor" class="editor-layer" spellcheck="false" wrap="off"&gt;&lt;/textarea&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div id="longPressMenu"&gt;
+        &lt;div class="menu-search-box"&gt;
+            &lt;input type="text" id="searchInput" class="menu-search-input" placeholder="🔍 Tìm kiếm..." oninput="onSearchInput(this.value)"&gt;
+        &lt;/div&gt;
+        &lt;div class="menu-item" onclick="clearCode(); hideMenu();"&gt;Xóa tất cả&lt;/div&gt;
+        &lt;div class="menu-item" onclick="copyCode(); hideMenu();"&gt;Sao chép&lt;/div&gt;
+        &lt;div class="menu-item" onclick="pasteCode(); hideMenu();"&gt;Dán&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;pre id="output" style="margin-top: 15px;"&gt;Đang kết nối API...&lt;/pre&gt;
+
+    &lt;script&gt;
+        window.addEventListener("DOMContentLoaded", () => {
+            Alpytide.init("#runBtn", "#output");
+        });
+
+        async function executePython() {
+            const code = document.getElementById("realEditor").value;
+            await Alpytide.run(code, "#output", "#runBtn");
+        }
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+        </div>
+    </section>
+
+</main>
 
 <script>
     function copyApiUrl() {
         const urlText = document.getElementById("apiUrl").innerText;
         navigator.clipboard.writeText(urlText).then(() => {
-            alert("Đã sao chép API Endpoint thành công!");
+            alert("Đã sao chép API Endpoint!");
         }).catch(err => {
             alert("Lỗi sao chép: " + err);
         });
