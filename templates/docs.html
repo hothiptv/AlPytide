@@ -3,35 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python API Documentation</title>
+    <title>Alpytide Engine - Tài Liệu API & Hướng Dẫn Tích Hợp</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; color: #212529; font-family: system-ui, -apple-system, sans-serif; }
-        .header-box { background-color: #212529; color: white; padding: 2rem 1rem; margin-bottom: 2rem; }
-        pre { background-color: #212529; color: #f8f9fa; padding: 1rem; border-radius: 6px; font-size: 0.85rem; overflow-x: auto; }
-        .card { margin-bottom: 1.5rem; border: 1px solid #dee2e6; border-radius: 8px; }
-        .api-url-box { background: #e9ecef; padding: 12px; border-radius: 6px; font-family: monospace; font-weight: bold; word-break: break-all; }
-        .component-badge { font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .header-box { background-color: #212529; color: white; padding: 2.5rem 1rem; margin-bottom: 2rem; }
+        pre { background-color: #1e1e1e; color: #d4d4d4; padding: 1.2rem; border-radius: 8px; font-size: 0.85rem; overflow-x: auto; }
+        .card { margin-bottom: 1.5rem; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .api-url-box { background: #e9ecef; padding: 12px 16px; border-radius: 6px; font-family: monospace; font-weight: bold; word-break: break-all; }
+        .badge-status { font-size: 0.8rem; padding: 5px 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
+<!-- Header -->
 <div class="header-box text-center">
     <div class="container">
-        <h2 class="fw-bold">Python API Engine Documentation</h2>
-        <p class="lead mb-0 fs-6">Thực thi Python Backend chuyên dụng cho Web IDE - Tránh lag máy khách</p>
+        <h2 class="fw-bold">🐍 Alpytide Python Engine Documentation</h2>
+        <p class="lead mb-0 fs-6">Tài liệu tích hợp Engine thực thi Python Serverless cho Web IDE</p>
     </div>
 </div>
 
-<div class="container">
+<div class="container pb-5">
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-12">
 
-            <!-- 1. Endpoint Python API Engine -->
-            <div class="card shadow-sm">
+            <!-- 1. Endpoint API -->
+            <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title fw-bold mb-3">1. Endpoint Python API Engine</h5>
+                    <h5 class="card-title fw-bold text-dark mb-3">1. Server Endpoint</h5>
                     <div class="api-url-box d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
                         <span id="apiUrl">https://alpytide.onrender.com/api</span>
                         <button class="btn btn-primary btn-sm px-3 text-nowrap" onclick="copyApiUrl()">📋 Sao chép API</button>
@@ -39,57 +40,76 @@
                 </div>
             </div>
 
-            <!-- 2. Mô Tả Chi Tiết Các Thành Phần Giao Diện -->
-            <div class="card shadow-sm">
+            <!-- 2.CDN Thư viện -->
+            <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title fw-bold mb-3">2. Chi tiết các Thành Phần Giao Diện IDE</h5>
-                    <ul class="list-group list-group-flush mb-3">
-                        <li class="list-group-item px-0">
-                            <span class="badge bg-primary component-badge">Nút RUN</span> 
-                            <strong>Nút Kích Hoạt Thực Thi:</strong> Dùng để bắt sự kiện người dùng bấm, thu thập mã từ Khung IDE và kích hoạt thư viện Alpytide gửi gói tin tới Server API.
-                        </li>
-                        <li class="list-group-item px-0">
-                            <span class="badge bg-dark component-badge">Khung IDE</span> 
-                            <strong>Khung Soạn Thảo Code:</strong> Nơi người dùng nhập mã nguồn Python. Có thể dùng thẻ <code>&lt;textarea&gt;</code> cơ bản hoặc tích hợp <code>Monaco Editor</code> (VS Code Web Engine).
-                        </li>
-                        <li class="list-group-item px-0">
-                            <span class="badge bg-success component-badge">Khung Output</span> 
-                            <strong>Khung Hiển Thị Kết Quả:</strong> Hiển thị trạng thái kết nối real-time, phản hồi lệnh <code>print()</code> từ Python hoặc báo lỗi hệ thống nếu đứt kết nối.
-                        </li>
-                    </ul>
+                    <h5 class="card-title fw-bold text-dark mb-3">2. Nhúng Thư Viện JS (CDN jsDelivr)</h5>
+                    <p class="text-muted small mb-2">Thêm thẻ script sau vào phần <code>&lt;head&gt;</code> của trang web để xử lý kết nối không bị lỗi CORS:</p>
+                    <pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/templates/alpytide.js"&gt;&lt;/script&gt;</code></pre>
                 </div>
             </div>
 
-            <!-- 3. Hướng Dẫn Tích Hợp & Kết Nối API -->
-            <div class="card shadow-sm">
+            <!-- 3. Luồng hoạt động & Các Hàm API JS -->
+            <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title fw-bold mb-3">3. Hướng dẫn kết nối API với từng thành phần</h5>
+                    <h5 class="card-title fw-bold text-dark mb-3">3. Cú Pháp Sử Dụng Thư Viện <code>Alpytide</code></h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 25%;">Hàm / Phương thức</th>
+                                    <th style="width: 35%;">Tham số truyền vào</th>
+                                    <th>Mô tả chức năng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>Alpytide.init()</code></td>
+                                    <td><code>(runBtnSelector, outputSelector)</code></td>
+                                    <td>
+                                        Tự động kiểm tra trạng thái Server (Ping Check), tự động khóa nút RUN, hiển thị các thông báo:
+                                        <br>• <i>"API: Vui lòng chờ server được kết nối"</i>
+                                        <br>• <i>"Đang khởi động API. Vui lòng đợi…"</i> (Nút RUN sẽ mở khi kết nối xong)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><code>Alpytide.run()</code></td>
+                                    <td><code>(code, outputSelector, runBtnSelector)</code></td>
+                                    <td>
+                                        Gửi mã Python lên server thực thi. Hiển thị thông báo:
+                                        <br>• <i>"Đang thực thi code…"</i>
+                                        <br>• <i>"Đã thực thi xong!"</i> (kèm Output kết quả)
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-                    <h6 class="fw-bold text-primary">Bước 3.1: Nhúng CDN Thư viện Alpytide JS</h6>
-                    <p class="text-muted small mb-2">Thêm thẻ script sau vào phần <code>&lt;head&gt;</code> của file HTML:</p>
-                    <pre><code>&lt;<script src="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/templates/alpytide.js"></script>"&gt;&lt;/script&gt;</code></pre>
+            <!-- 4. Mã Nguồn Mẫu (Full Template) -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-dark mb-3">4. Ví Dụ Tích Hợp Hoàn Chỉnh (HTML & JS)</h5>
+                    <pre><code>&lt;!-- Thư viện Alpytide JS --&gt;
+&lt;script src="https://cdn.jsdelivr.net/gh/hothiptv/AlPytide@main/templates/alpytide.js"&gt;&lt;/script&gt;
 
-                    <h6 class="fw-bold text-primary mt-4">Bước 3.2: Tạo Cấu Trúc HTML cho 3 Thành Phần</h6>
-                    <pre><code>&lt;!-- 1. Nút RUN CODE --&gt;
-&lt;button id="runBtn" onclick="runPythonEngine()"&gt;▶ RUN CODE&lt;/button&gt;
+&lt;!-- Giao diện Nút RUN và Output --&gt;
+&lt;button id="runBtn" disabled&gt;▶ RUN CODE&lt;/button&gt;
+&lt;div id="output"&gt;API: Vui lòng chờ server được kết nối&lt;/div&gt;
 
-&lt;!-- 2. Khung Soạn Thảo IDE --&gt;
-&lt;textarea id="pythonIde" style="width:100%; height:150px;"&gt;print("Hello World!")&lt;/textarea&gt;
+&lt;script&gt;
+    // 1. Kiểm tra kết nối ngay khi tải trang
+    window.addEventListener("DOMContentLoaded", () => {
+        Alpytide.init("#runBtn", "#output");
+    });
 
-&lt;!-- 3. Khung Hiển Thị Output Console --&gt;
-&lt;div id="outputConsole" style="background:#000; color:#0f0; padding:10px;"&gt;&lt;/div&gt;</code></pre>
-
-                    <h6 class="fw-bold text-primary mt-4">Bước 3.3: Viết Logic Kết Nối API Bằng JavaScript</h6>
-                    <p class="text-muted small mb-2">Hàm kết nối sẽ lấy code từ <b>Khung IDE</b>, truyền qua <b>Nút RUN</b> và đẩy kết quả ra <b>Khung Output</b>:</p>
-                    <pre><code>&lt;script&gt;
-async function runPythonEngine() {
-    // Lấy dữ liệu mã nguồn từ Khung IDE
-    const sourceCode = document.getElementById("pythonIde").value;
-    
-    // Gọi thư viện Alpytide truyền mã nguồn và định vị Khung Output (#outputConsole)
-    // Hệ thống sẽ tự động gửi tới https://alpytide.onrender.com/api
-    await Alpytide.run(sourceCode, "#outputConsole");
-}
+    // 2. Chạy code Python
+    async function execute() {
+        const pythonCode = 'print("Hello World!")';
+        await Alpytide.run(pythonCode, "#output", "#runBtn");
+    }
 &lt;/script&gt;</code></pre>
                 </div>
             </div>
@@ -102,7 +122,7 @@ async function runPythonEngine() {
     function copyApiUrl() {
         const urlText = document.getElementById("apiUrl").innerText;
         navigator.clipboard.writeText(urlText).then(() => {
-            alert("Đã sao chép API URL thành công!");
+            alert("Đã sao chép API Endpoint thành công!");
         }).catch(err => {
             alert("Lỗi sao chép: " + err);
         });
